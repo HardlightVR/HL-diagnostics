@@ -9,52 +9,58 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include "LogWindow.h"
-
+#include "ShaderOps.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include <unordered_map>
+#include <map>
+#include "PluginWrapper.h"
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
 }
 
-void drawCube()
-{
-	GLfloat vertices[] =
-	{
-		-1, -1, -1,   -1, -1,  1,   -1,  1,  1,   -1,  1, -1,
-		 1, -1, -1,    1, -1,  1,    1,  1,  1,    1,  1, -1,
-		-1, -1, -1,   -1, -1,  1,    1, -1,  1,    1, -1, -1,
-		-1,  1, -1,   -1,  1,  1,    1,  1,  1,    1,  1, -1,
-		-1, -1, -1,   -1,  1, -1,    1,  1, -1,    1, -1, -1,
-		-1, -1,  1,   -1,  1,  1,    1,  1,  1,    1, -1,  1
-	};
 
-	GLfloat colors[] =
-	{
-		0, 0, 0,   0, 0, 1,   0, 1, 1,   0, 1, 0,
-		1, 0, 0,   1, 0, 1,   1, 1, 1,   1, 1, 0,
-		0, 0, 0,   0, 0, 1,   1, 0, 1,   1, 0, 0,
-		0, 1, 0,   0, 1, 1,   1, 1, 1,   1, 1, 0,
-		0, 0, 0,   0, 1, 0,   1, 1, 0,   1, 0, 0,
-		0, 0, 1,   0, 1, 1,   1, 1, 1,   1, 0, 1
-	};
+class ValueGraph {
+public:
+	void Render() {
+		for (int i = 0; i < 90; i++) {
+			values[i] = sin(ImGui::GetTime()+i);
+		}
+		ImGui::PlotLines(_name.c_str(), [](void* data, int idx) {return sinf(idx*0.2f); }, NULL, 100);
+	}
+	ValueGraph(std::string name) :_name(name) {};
+	~ValueGraph() {}
+	void AddValue(float f) {
+		
+	}
+private:
+	std::string _name;
+	float values[90];
 
-	static float alpha = 0;
-	//attempt to rotate cube
-	glRotatef(alpha, 0, 1, 0);
-
-	/* We have a color array and a vertex array */
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, vertices);
-	glColorPointer(3, GL_FLOAT, 0, colors);
-
-	/* Send data : 24 vertices */
-	glDrawArrays(GL_QUADS, 0, 24);
-
-	/* Cleanup states */
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	alpha += 1;
-}
+};
+class QuaternionDisplay {
+public:
+	void Render() {
+		_xGraph.Render();
+		_yGraph.Render();
+		_zGraph.Render();
+		_wGraph.Render();
+	}
+	QuaternionDisplay() :_xGraph("X"), _yGraph("Y"), _zGraph("Z"), _wGraph("W") {}
+	~QuaternionDisplay() {}
+	void Update(float x, float y, float z, float w) {
+		_xGraph.AddValue(x);
+		_yGraph.AddValue(y);
+		_zGraph.AddValue(z);
+		_wGraph.AddValue(w);
+	}
+private:
+	ValueGraph _xGraph;
+	ValueGraph _yGraph;
+	ValueGraph _zGraph;
+	ValueGraph _wGraph;
+};
 
 int main(int, char**)
 {
@@ -79,8 +85,13 @@ int main(int, char**)
 	// Setup ImGui binding
 	ImGui_ImplGlfwGL3_Init(window, true);
 
+	GLuint programID = LoadShaders("VertexShader.txt", "FragmentShader.txt");
 
-
+	// Enable depth test
+	glEnable(GL_DEPTH_TEST);
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
 	// Load Fonts
 	// (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
 	//ImGuiIO& io = ImGui::GetIO();
@@ -101,6 +112,40 @@ int main(int, char**)
 	const char* ids[4] = { "0x01", "0x23", "0x42", "0x12" };
 	const int statuses[4] = { 1,1,0, 1 };
 	// Main loop
+	QuaternionDisplay display;
+	
+	PluginWrapper plugin;
+	std::map<std::string, std::string> padToFilename = { 
+		{ "B2L", "Back_Left.haptic" },
+
+		{ "A1L", "Shoulder_Left.haptic" },
+		{ "A2L", "Upper_Arm_Left.haptic" },
+		{ "A3L", "Forearm_Left.haptic" },
+		{ "A1R", "Shoulder_Right.haptic" } ,
+		{ "A2R", "Upper_Arm_Right.haptic" },
+		{ "A3R", "Forearm_Right.haptic" },
+		{ "C1R", "Chest_Right.haptic" },
+		{ "C2R", "Upper_Ab_Right.haptic" },
+		{ "C3R", "Mid_Ab_Right.haptic" },
+		{ "C4R", "Lower_Ab_Right.haptic" },
+		{ "B2R", "Back_Right.haptic" },
+		
+		{ "C1L", "Chest_Left.haptic" },
+		{ "C2L", "Upper_Ab_Left.haptic" },
+		{ "C3L", "Mid_Ab_Left.haptic" },
+		{ "C4L", "Lower_Ab_Left.haptic" }
+
+
+	};
+
+	std::vector<std::string> pads = { "B2L", "A1L", "C1L", "C2L", "C1R", "C2R", "B2R", "A1R" , "A2L", "A3L", "C3L", "C4L", "C3R", "C4R", "A2R", "A3R"};
+	//pads.reserve(pads.size());
+	
+
+	//for (auto kv : padToFilename) {
+	//	pads.push_back(kv.first);
+	//}
+	unsigned int allPadsTest = plugin.Create("test_all.haptic");
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -113,18 +158,30 @@ int main(int, char**)
 			#pragma region Status Window
 			ImGui::Begin("Status");
 			{
-				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-				ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
-				ImGui::Text("Engine status");
-				ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Online");
-				ImGui::EndChild();
-				ImGui::PopStyleVar();
+				//ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+				//ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
+				//ImGui::Text("Engine status");
+				//if (plugin.PollStatus() == 0) {
+				//	ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Offline");
+				//}
+				//else {
+				//	ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Online");
+
+			//	}
+			//	ImGui::EndChild();
+			//	ImGui::PopStyleVar();
 			}
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 				ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
 				ImGui::Text("Suit status");
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
+				if (plugin.PollStatus() == 0) {
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
+				}
+				else {
+					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
+
+				}
 				ImGui::EndChild();
 				ImGui::PopStyleVar();
 			}
@@ -134,7 +191,7 @@ int main(int, char**)
 			#pragma region Log Window
 			if (show_app_log) { ShowLog(&show_app_log); }
 			#pragma endregion
-
+		//	ImGui::ShowMetricsWindow();
 			#pragma region Motor Diagnostics
 			ImGui::Begin("Motors");
 			{
@@ -175,12 +232,19 @@ int main(int, char**)
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("FullPower", ImVec2(0, 70), true);
-					ImGui::Text("Test all motors at full power"); ImGui::NewLine();
-					ImGui::Button("Start"); ImGui::SameLine();
-					ImGui::Button("Stop");
+					ImGui::Text("Test all pads sequentially"); ImGui::NewLine();
+					if (ImGui::Button("Go")) {
+						plugin.Play(allPadsTest);
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Stop")) {
+						plugin.Stop(allPadsTest);
+					}
+				
 					ImGui::EndChild();
 					ImGui::PopStyleVar();
 				}
+				/*
 				{
 					static int glueBusterTimeDelay = 30;
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
@@ -200,35 +264,39 @@ int main(int, char**)
 				
 					ImGui::EndChild();
 					ImGui::PopStyleVar();
-				}
+				}*/
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-					ImGui::BeginChild("PadByPad", ImVec2(0, 120), true);
-					ImGui::Text("Test pad by pad using "); ImGui::SameLine();
-					static int selected_sequence = 0;
-					const char* names[] = { "Click", "Buzz", "Hum" };
+					ImGui::BeginChild("PadByPad", ImVec2(0, 150), true);
+					ImGui::Text("Test pad by pad ");
+					//ImGui::SameLine();
+					//static int selected_sequence = 0;
+				//	const char* names[] = { "Click", "Buzz", "Hum" };
 
-					if (ImGui::Button("Sequence.."))
-						ImGui::OpenPopup("select");
-					ImGui::SameLine();
-					ImGui::Text(names[selected_sequence]);
-					if (ImGui::BeginPopup("select"))
-					{
-						for (int i = 0; i < 3; i++)
-							if (ImGui::Selectable(names[i]))
-								selected_sequence = i;
-						ImGui::EndPopup();
-					}
+				//	if (ImGui::Button("Sequence.."))
+				//		ImGui::OpenPopup("select");
+				//	ImGui::SameLine();
+				//	ImGui::Text(names[selected_sequence]);
+				//	if (ImGui::BeginPopup("select"))
+				//	{
+				//		for (int i = 0; i < 3; i++)
+				//			if (ImGui::Selectable(names[i]))
+				//				selected_sequence = i;
+				//		ImGui::EndPopup();
+				//	}
 					ImGui::NewLine();
 					ImGui::Columns(4);
-					const char* pads[8] = { "BL-2", "CL-1", "BX-4", "LF-3", "LF-4", "LF-4", "NA-3" , "NA-4"};
-					for (int i = 0; i < 8; i++)
+					
+					for (int i = 0; i < pads.size(); i++)
 					{
 						if (i % 2 == 0 && i != 0) {
 							ImGui::NextColumn();
 						}
 						
-						ImGui::Button(pads[i], ImVec2(-1.0f, 0.0f));
+						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
+							
+							plugin.Play(plugin.Create(padToFilename[pads[i]]));
+						}
 					}
 
 
@@ -245,8 +313,10 @@ int main(int, char**)
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
-				ImDrawList* draw_list = ImGui::GetWindowDrawList();
 				
+				display.Render();
+			
+		
 			}
 			ImGui::End();
 			#pragma endregion
@@ -260,44 +330,19 @@ int main(int, char**)
         glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		
+      
 
-
-		//custom code
-		static const GLfloat g_vertex_buffer_data[] = {
-			-1.0f, -1.0f, 0.0f,
-			1.0f, -1.0f, 0.0f,
-			0.0f,  1.0f, 0.0f,
-		};
-		// This will identify our vertex buffer
-		GLuint vertexbuffer;
-		// Generate 1 buffer, put the resulting identifier in vertexbuffer
-		glGenBuffers(1, &vertexbuffer);
-		// The following commands will talk about our 'vertexbuffer' buffer
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-		// Give our vertices to OpenGL.
-		glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-		glVertexAttribPointer(
-			0,                  // attribute 0. No particular reason for 0, but must match the layout in the shader.
-			3,                  // size
-			GL_FLOAT,           // type
-			GL_FALSE,           // normalized?
-			0,                  // stride
-			(void*)0            // array buffer offset
-		);
-		// Draw the triangle !
-		glDrawArrays(GL_TRIANGLES, 0, 3); // Starting from vertex 0; 3 vertices total -> 1 triangle
-		glDisableVertexAttribArray(0);
 		//end custom code
 		glUseProgram(0);
+		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		 ImGui::Render();
 
 
         glfwSwapBuffers(window);
     }
+	glDeleteProgram(programID);
+	glDeleteVertexArrays(1, &VertexArrayID);
 
     // Cleanup
     ImGui_ImplGlfwGL3_Shutdown();
@@ -305,3 +350,4 @@ int main(int, char**)
 
     return 0;
 }
+
