@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <map>
 #include "PluginWrapper.h"
+#include <chrono>
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
@@ -24,19 +25,28 @@ static void error_callback(int error, const char* description)
 class ValueGraph {
 public:
 	void Render() {
-		for (int i = 0; i < 90; i++) {
-			values[i] = sin(ImGui::GetTime()+i);
+		for (int i = 0; i < NUM_SAMPLES-1; i++) {
+			if (i == 0) {
+				continue;
+			}
+			values[i] = values[i + 1];
+
 		}
-		ImGui::PlotLines(_name.c_str(), [](void* data, int idx) {return sinf(idx*0.2f); }, NULL, 100);
+	
+		ImGui::PlotLines(_name.c_str(), values, NUM_SAMPLES, 0, 0, -1, 1.0, ImVec2(300, 40));
 	}
 	ValueGraph(std::string name) :_name(name) {};
-	~ValueGraph() {}
+	~ValueGraph() {
+		std::fill(values, values + NUM_SAMPLES, 0);
+	}
 	void AddValue(float f) {
 		
+		values[NUM_SAMPLES-1] = f;
 	}
 private:
+	const static int NUM_SAMPLES = 500;
 	std::string _name;
-	float values[90];
+	float values[NUM_SAMPLES];
 
 };
 class QuaternionDisplay {
@@ -92,15 +102,6 @@ int main(int, char**)
 	// Accept fragment if it closer to the camera than the former one
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	// Load Fonts
-	// (there is a default font, this is only if you want to change it. see extra_fonts/README.txt for more details)
-	//ImGuiIO& io = ImGui::GetIO();
-	//io.Fonts->AddFontDefault();
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyClean.ttf", 13.0f);
-	//io.Fonts->AddFontFromFileTTF("../../extra_fonts/ProggyTiny.ttf", 10.0f);
-	//io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 
 	bool show_test_window = true;
 	bool show_another_window = false;
@@ -112,8 +113,10 @@ int main(int, char**)
 	const char* ids[4] = { "0x01", "0x23", "0x42", "0x12" };
 	const int statuses[4] = { 1,1,0, 1 };
 	// Main loop
-	QuaternionDisplay display;
-	
+	QuaternionDisplay display_chest;
+	QuaternionDisplay display_leftUpperArm;
+	QuaternionDisplay display_rightUpperArm;
+
 	PluginWrapper plugin;
 	std::map<std::string, std::string> padToFilename = { 
 		{ "B2L", "Back_Left.haptic" },
@@ -146,6 +149,8 @@ int main(int, char**)
 	//	pads.push_back(kv.first);
 	//}
 	unsigned int allPadsTest = plugin.Create("test_all.haptic");
+
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -191,7 +196,7 @@ int main(int, char**)
 			#pragma region Log Window
 			if (show_app_log) { ShowLog(&show_app_log); }
 			#pragma endregion
-		//	ImGui::ShowMetricsWindow();
+			ImGui::ShowMetricsWindow();
 			#pragma region Motor Diagnostics
 			ImGui::Begin("Motors");
 			{
@@ -313,8 +318,32 @@ int main(int, char**)
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
-				
-				display.Render();
+				if (ImGui::Button("Enable tracking")) {
+					plugin.SetTrackingEnabled(true);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Disable tracking")) {
+					plugin.SetTrackingEnabled(false);
+				}
+				ImGui::NewLine();
+				auto tracking = plugin.PollTracking();
+				if (plugin.IsValidQuaternion(tracking.chest)) {
+					ImGui::Text("Chest IMU");
+					display_chest.Update(tracking.chest.x, tracking.chest.y, tracking.chest.z, tracking.chest.w);
+					display_chest.Render();
+				}
+				if (plugin.IsValidQuaternion(tracking.right_upper_arm)) {
+					ImGui::Text("Right Upper Arm IMU");
+
+					display_rightUpperArm.Update(tracking.right_upper_arm.x, tracking.right_upper_arm.y, tracking.right_upper_arm.z, tracking.right_upper_arm.w);
+					display_rightUpperArm.Render();
+				}
+				if (plugin.IsValidQuaternion(tracking.left_upper_arm)) {
+					ImGui::Text("Left Upper Arm IMU");
+
+					display_leftUpperArm.Update(tracking.left_upper_arm.x, tracking.left_upper_arm.y, tracking.left_upper_arm.z, tracking.left_upper_arm.w);
+					display_leftUpperArm.Render();
+				}
 			
 		
 			}
@@ -337,9 +366,12 @@ int main(int, char**)
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		 ImGui::Render();
+		
 
 
         glfwSwapBuffers(window);
+
+		
     }
 	glDeleteProgram(programID);
 	glDeleteVertexArrays(1, &VertexArrayID);

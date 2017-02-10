@@ -7,6 +7,8 @@
 
 #include <string>
 #include <vector>
+using namespace NullSpaceDLL;
+
 class PluginWrapper
 {
 public:
@@ -14,6 +16,8 @@ public:
 	~PluginWrapper();
 	int Play(unsigned int handle);
 	int Create(std::string hapticFileName);
+	InteropTrackingUpdate PollTracking();
+	bool IsValidQuaternion(const Quaternion& q);
 	void Stop(unsigned int handle);
 	int PollStatus();
 	void SetTrackingEnabled(bool);

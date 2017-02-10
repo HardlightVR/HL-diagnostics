@@ -35,6 +35,18 @@ int PluginWrapper::Create(std::string hapticFileName)
 	return handle;
 }
 
+InteropTrackingUpdate PluginWrapper::PollTracking()
+{
+	InteropTrackingUpdate update;
+	NSVR_PollTracking(m_plugin, update);
+	return update;
+}
+
+bool PluginWrapper::IsValidQuaternion(const Quaternion & q)
+{
+	return !(abs(q.w) < 0.00001 && abs(q.x) < 0.00001 && abs(q.y) < 0.00001 && abs(q.z) < 0.00001);
+}
+
 void PluginWrapper::Stop(unsigned int handle)
 {
 	NSVR_HandleCommand(m_plugin, handle, 2);
@@ -45,8 +57,14 @@ int PluginWrapper::PollStatus()
 	return NSVR_PollStatus(m_plugin);
 }
 
-void PluginWrapper::SetTrackingEnabled(bool)
+void PluginWrapper::SetTrackingEnabled(bool wantTracking)
 {
+	if (wantTracking) {
+		NSVR_EngineCommand(m_plugin, 4);
+	}
+	else {
+		NSVR_EngineCommand(m_plugin, 5);
+	}
 }
 
 std::vector<char> PluginWrapper::readFromFile(std::string filename)
