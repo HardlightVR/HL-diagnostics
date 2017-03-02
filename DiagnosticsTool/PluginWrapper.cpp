@@ -1,9 +1,16 @@
 #include "stdafx.h"
 #include "PluginWrapper.h"
 #include <fstream>
+#include "flatbuffers/flatbuffers.h"
+#include "Events_generated.h"
+#include <iostream>
 PluginWrapper::PluginWrapper()
 {
 	m_plugin = NSVR_Create();
+
+	if (!NSVR_IsCompatibleDLL()) {
+		std::cout << "Incompatible NSVR Plugin DLL. Email casey@nullspacevr.com" << '\n';
+	}
 }
 
 
@@ -14,18 +21,37 @@ PluginWrapper::~PluginWrapper()
 
 int PluginWrapper::Play(unsigned int handle)
 {
-	NSVR_HandleCommand(m_plugin, handle, 0);
+	NSVR_DoHandleCommand(m_plugin, handle, NSVR_HandleCommand::PLAY);
 	return handle;
 
 }
 
+int PluginWrapper::CreateBasicHapticEvent(float time, float strength, float duration, uint32_t area, std::string effect) {
+	flatbuffers::FlatBufferBuilder builder;
+	auto feffect = builder.CreateString(effect);
+	auto effectOffset = NullSpace::Events::CreateBasicHapticEvent(builder, time, strength, duration, area, feffect);
+	
+	auto suitEvent = NullSpace::Events::CreateSuitEvent(builder, NullSpace::Events::SuitEventType_BasicHapticEvent, effectOffset.Union());
+
+	std::vector<flatbuffers::Offset<NullSpace::Events::SuitEvent>> stuff;
+	stuff.push_back(suitEvent);
+
+	auto listOffset = builder.CreateVector(stuff);
+	auto finalList = NullSpace::Events::CreateSuitEventList(builder, listOffset);
+	builder.Finish(finalList);
+
+	unsigned int handle = NSVR_GenHandle(m_plugin);
+	NSVR_TransmitEvents(m_plugin, handle, builder.GetBufferPointer(), builder.GetSize());
+	return handle;
+
+}
 int PluginWrapper::Create(std::string hapticFileName)
 {
 	unsigned int handle = 0;
 	try {
 		auto data = readFromFile(hapticFileName);
 		handle = NSVR_GenHandle(m_plugin);
-		NSVR_CreateHaptic(m_plugin, handle, (void*)data.data(), data.size());
+		//NSVR_CreateHaptic(m_plugin, handle, (void*)data.data(), data.size());
 	
 	}
 	catch (std::runtime_error e) {
@@ -35,21 +61,21 @@ int PluginWrapper::Create(std::string hapticFileName)
 	return handle;
 }
 
-InteropTrackingUpdate PluginWrapper::PollTracking()
+NSVR_InteropTrackingUpdate PluginWrapper::PollTracking()
 {
-	InteropTrackingUpdate update;
+	NSVR_InteropTrackingUpdate update;
 	NSVR_PollTracking(m_plugin, update);
 	return update;
 }
 
-bool PluginWrapper::IsValidQuaternion(const Quaternion & q)
+bool PluginWrapper::IsValidQuaternion(const NSVR_Quaternion & q)
 {
 	return !(abs(q.w) < 0.00001 && abs(q.x) < 0.00001 && abs(q.y) < 0.00001 && abs(q.z) < 0.00001);
 }
 
 void PluginWrapper::Stop(unsigned int handle)
 {
-	NSVR_HandleCommand(m_plugin, handle, 2);
+	NSVR_DoHandleCommand(m_plugin, handle, NSVR_HandleCommand::RESET);
 }
 
 int PluginWrapper::PollStatus()
@@ -60,10 +86,10 @@ int PluginWrapper::PollStatus()
 void PluginWrapper::SetTrackingEnabled(bool wantTracking)
 {
 	if (wantTracking) {
-		NSVR_EngineCommand(m_plugin, 4);
+		NSVR_DoEngineCommand(m_plugin, NSVR_EngineCommand::ENABLE_TRACKING);
 	}
 	else {
-		NSVR_EngineCommand(m_plugin, 5);
+		NSVR_DoEngineCommand(m_plugin, NSVR_EngineCommand::DISABLE_TRACKING);
 	}
 }
 

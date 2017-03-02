@@ -42,10 +42,16 @@
     <ClInclude Include="ShaderOps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PluginWrapper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\NS_Unreal_SDK\NS_Unreal_SDK\flatbuff_defs\Events_generated.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="NSLoader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PluginWrapper.h">
+    <ClInclude Include="AreaFlags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -372,7 +372,7 @@ void ImGui_ImplGlfwGL3_NewFrame()
 
     // Setup time step
     double current_time =  glfwGetTime();
-    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f/60.0f);
+    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f/120.0f);
     g_Time = current_time;
 
     // Setup inputs

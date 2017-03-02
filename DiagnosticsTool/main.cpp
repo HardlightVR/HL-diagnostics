@@ -16,6 +16,8 @@
 #include <map>
 #include "PluginWrapper.h"
 #include <chrono>
+
+#include "AreaFlags.h"
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
@@ -44,7 +46,7 @@ public:
 		values[NUM_SAMPLES-1] = f;
 	}
 private:
-	const static int NUM_SAMPLES = 500;
+	const static int NUM_SAMPLES = 2000;
 	std::string _name;
 	float values[NUM_SAMPLES];
 
@@ -118,29 +120,30 @@ int main(int, char**)
 	QuaternionDisplay display_rightUpperArm;
 
 	PluginWrapper plugin;
-	std::map<std::string, std::string> padToFilename = { 
-		{ "B2L", "Back_Left.haptic" },
+	std::map<std::string, AreaFlag> padToAreaFlag = {
+		{ "B2L", AreaFlag::Back_Left },
 
-		{ "A1L", "Shoulder_Left.haptic" },
-		{ "A2L", "Upper_Arm_Left.haptic" },
-		{ "A3L", "Forearm_Left.haptic" },
-		{ "A1R", "Shoulder_Right.haptic" } ,
-		{ "A2R", "Upper_Arm_Right.haptic" },
-		{ "A3R", "Forearm_Right.haptic" },
-		{ "C1R", "Chest_Right.haptic" },
-		{ "C2R", "Upper_Ab_Right.haptic" },
-		{ "C3R", "Mid_Ab_Right.haptic" },
-		{ "C4R", "Lower_Ab_Right.haptic" },
-		{ "B2R", "Back_Right.haptic" },
-		
-		{ "C1L", "Chest_Left.haptic" },
-		{ "C2L", "Upper_Ab_Left.haptic" },
-		{ "C3L", "Mid_Ab_Left.haptic" },
-		{ "C4L", "Lower_Ab_Left.haptic" }
+		{ "A1L", AreaFlag::Shoulder_Left },
+		{ "A2L", AreaFlag::Upper_Arm_Left },
+		{ "A3L", AreaFlag::Forearm_Left },
+		{ "A1R", AreaFlag::Shoulder_Right } ,
+		{ "A2R", AreaFlag::Upper_Arm_Right },
+		{ "A3R", AreaFlag::Forearm_Right },
+		{ "C1R", AreaFlag::Chest_Right },
+		{ "C2R", AreaFlag::Upper_Ab_Right },
+		{ "C3R", AreaFlag::Mid_Ab_Right },
+		{ "C4R", AreaFlag::Lower_Ab_Right },
+		{ "B2R", AreaFlag::Back_Right },
+
+		{ "C1L", AreaFlag::Chest_Left },
+		{ "C2L", AreaFlag::Upper_Ab_Left },
+		{ "C3L", AreaFlag::Mid_Ab_Left },
+		{ "C4L", AreaFlag::Lower_Ab_Left }
+	
 
 
 	};
-
+	
 	std::vector<std::string> pads = { "B2L", "A1L", "C1L", "C2L", "C1R", "C2R", "B2R", "A1R" , "A2L", "A3L", "C3L", "C4L", "C3R", "C4R", "A2R", "A3R"};
 	//pads.reserve(pads.size());
 	
@@ -300,7 +303,8 @@ int main(int, char**)
 						
 						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
 							
-							plugin.Play(plugin.Create(padToFilename[pads[i]]));
+							int handle = plugin.CreateBasicHapticEvent(0.0, 1.0, 0.1, (uint32_t)padToAreaFlag[pads[i].c_str()], "doom_buzz");
+							plugin.Play(handle);
 						}
 					}
 

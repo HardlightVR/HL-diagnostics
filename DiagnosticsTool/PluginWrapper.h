@@ -7,7 +7,7 @@
 
 #include <string>
 #include <vector>
-using namespace NullSpaceDLL;
+
 
 class PluginWrapper
 {
@@ -16,13 +16,14 @@ public:
 	~PluginWrapper();
 	int Play(unsigned int handle);
 	int Create(std::string hapticFileName);
-	InteropTrackingUpdate PollTracking();
-	bool IsValidQuaternion(const Quaternion& q);
+	int PluginWrapper::CreateBasicHapticEvent(float time, float strength, float duration, uint32_t area, std::string effect);
+	NSVR_InteropTrackingUpdate PollTracking();
+	bool IsValidQuaternion(const NSVR_Quaternion& q);
 	void Stop(unsigned int handle);
 	int PollStatus();
 	void SetTrackingEnabled(bool);
 private:
 	std::vector<char> readFromFile(std::string filename);
-	NSVRPlugin m_plugin;
+	NSVR_Context_t* m_plugin;
 };
 
