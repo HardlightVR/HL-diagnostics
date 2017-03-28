@@ -14,10 +14,16 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <unordered_map>
 #include <map>
-#include "PluginWrapper.h"
 #include <chrono>
 
-#include "AreaFlags.h"
+#include "NSLoader.h"
+#include <iostream>
+#include "CPPWrapper\AreaFlags.h"
+//#include "CPPWrapper\NSVRPlugin.h"
+//#include "CPPWrapper\HapticCreator.h"
+//#include "CPPWrapper\HapticSequence.h"
+
+using namespace nsvr;
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
@@ -119,7 +125,7 @@ int main(int, char**)
 	QuaternionDisplay display_leftUpperArm;
 	QuaternionDisplay display_rightUpperArm;
 
-	PluginWrapper plugin;
+
 	std::map<std::string, AreaFlag> padToAreaFlag = {
 		{ "B2L", AreaFlag::Back_Left },
 
@@ -144,14 +150,35 @@ int main(int, char**)
 
 	};
 	
-	std::vector<std::string> pads = { "B2L", "A1L", "C1L", "C2L", "C1R", "C2R", "B2R", "A1R" , "A2L", "A3L", "C3L", "C4L", "C3R", "C4R", "A2R", "A3R"};
-	//pads.reserve(pads.size());
-	
 
-	//for (auto kv : padToFilename) {
-	//	pads.push_back(kv.first);
-	//}
-	unsigned int allPadsTest = plugin.Create("test_all.haptic");
+	
+	//Let's build the test effect. We'll iterate through all the pads, and then create an event for each.
+	
+	std::vector<std::string> pads = { "B2L", "A1L", "C1L", "C2L", "C1R", "C2R", "B2R", "A1R" , "A2L", "A3L", "C3L", "C4L", "C3R", "C4R", "A2R", "A3R"};
+
+	//Instantiate the plugin
+	NSVR_System* system = NSVR_System_Create();
+	if (!system) {
+		std::cout << "Failed to instantiate the NSVR Plugin";
+		abort();
+	}
+
+	//Create the list to hold our events
+	NSVR_EventList* events = NSVR_EventList_Create();
+	float offset = 0.0f;
+	for (const auto& area : pads ) {
+		NSVR_Event* myEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
+		NSVR_Event_SetFloat(myEvent, "duration", 0.7f);
+		NSVR_Event_SetFloat(myEvent, "strength", 1.0f);
+		NSVR_Event_SetInteger(myEvent, "area", (int)padToAreaFlag[area]);
+		NSVR_Event_SetInteger(myEvent, "effect", 666); //doom_buzz
+		NSVR_Event_SetFloat(myEvent, "time", offset);
+		NSVR_EventList_AddEvent(events, myEvent);
+		offset += 1.0f;
+	}
+
+	unsigned int test_effect_handle = NSVR_System_GenerateHandle(system);
+	NSVR_EventList_Transmit(system, events, test_effect_handle);
 
 
     while (!glfwWindowShouldClose(window))
@@ -164,34 +191,44 @@ int main(int, char**)
         // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
 		{
 			#pragma region Status Window
+
+			NSVR_System_Status status = { 0 };
+			NSVR_System_PollStatus(system, &status);
+
+
 			ImGui::Begin("Status");
 			{
-				//ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-				//ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
-				//ImGui::Text("Engine status");
-				//if (plugin.PollStatus() == 0) {
-				//	ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Offline");
-				//}
-				//else {
-				//	ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Online");
-
-			//	}
-			//	ImGui::EndChild();
-			//	ImGui::PopStyleVar();
-			}
-			{
+				
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-				ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
-				ImGui::Text("Suit status");
-				if (plugin.PollStatus() == 0) {
-					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
+				ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
+				ImGui::Text("Service connection status");
+				if (status.ConnectedToService) {
+					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
+
 				}
 				else {
-					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Disconnected");
 
 				}
 				ImGui::EndChild();
 				ImGui::PopStyleVar();
+				
+			}
+			{
+				if (status.ConnectedToService) {
+					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+					ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
+					ImGui::Text("Suit status");
+					if (status.ConnectedToSuit) {
+						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
+					}
+					else {
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
+					}
+					ImGui::EndChild();
+					ImGui::PopStyleVar();
+				}
+			
 			}
 			ImGui::End();
 			#pragma endregion
@@ -242,11 +279,17 @@ int main(int, char**)
 					ImGui::BeginChild("FullPower", ImVec2(0, 70), true);
 					ImGui::Text("Test all pads sequentially"); ImGui::NewLine();
 					if (ImGui::Button("Go")) {
-						plugin.Play(allPadsTest);
+						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::PLAY);
+
+						//testSeq.Play(AreaFlag::All_Areas);
+						//plugin.Play(allPadsTest);
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Stop")) {
-						plugin.Stop(allPadsTest);
+						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::RESET);
+
+
+						//plugin.Stop(allPadsTest);
 					}
 				
 					ImGui::EndChild();
@@ -277,21 +320,7 @@ int main(int, char**)
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("PadByPad", ImVec2(0, 150), true);
 					ImGui::Text("Test pad by pad ");
-					//ImGui::SameLine();
-					//static int selected_sequence = 0;
-				//	const char* names[] = { "Click", "Buzz", "Hum" };
-
-				//	if (ImGui::Button("Sequence.."))
-				//		ImGui::OpenPopup("select");
-				//	ImGui::SameLine();
-				//	ImGui::Text(names[selected_sequence]);
-				//	if (ImGui::BeginPopup("select"))
-				//	{
-				//		for (int i = 0; i < 3; i++)
-				//			if (ImGui::Selectable(names[i]))
-				//				selected_sequence = i;
-				//		ImGui::EndPopup();
-				//	}
+					
 					ImGui::NewLine();
 					ImGui::Columns(4);
 					
@@ -303,8 +332,8 @@ int main(int, char**)
 						
 						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
 							
-							int handle = plugin.CreateBasicHapticEvent(0.0, 1.0, 0.1, (uint32_t)padToAreaFlag[pads[i].c_str()], "doom_buzz");
-							plugin.Play(handle);
+							//int handle = plugin.CreateBasicHapticEvent(0.0, 1.0, 0.5, (uint32_t)padToAreaFlag[pads[i].c_str()], "doom_buzz");
+							//plugin.Play(handle);
 						}
 					}
 
@@ -322,15 +351,15 @@ int main(int, char**)
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
-				if (ImGui::Button("Enable tracking")) {
+				/*if (ImGui::Button("Enable tracking")) {
 					plugin.SetTrackingEnabled(true);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Disable tracking")) {
 					plugin.SetTrackingEnabled(false);
-				}
+				}*/
 				ImGui::NewLine();
-				auto tracking = plugin.PollTracking();
+				/*auto tracking = plugin.PollTracking();
 				if (plugin.IsValidQuaternion(tracking.chest)) {
 					ImGui::Text("Chest IMU");
 					display_chest.Update(tracking.chest.x, tracking.chest.y, tracking.chest.z, tracking.chest.w);
@@ -347,7 +376,7 @@ int main(int, char**)
 
 					display_leftUpperArm.Update(tracking.left_upper_arm.x, tracking.left_upper_arm.y, tracking.left_upper_arm.z, tracking.left_upper_arm.w);
 					display_leftUpperArm.Render();
-				}
+				}*/
 			
 		
 			}
@@ -379,6 +408,8 @@ int main(int, char**)
     }
 	glDeleteProgram(programID);
 	glDeleteVertexArrays(1, &VertexArrayID);
+
+	NSVR_System_Release(system);
 
     // Cleanup
     ImGui_ImplGlfwGL3_Shutdown();

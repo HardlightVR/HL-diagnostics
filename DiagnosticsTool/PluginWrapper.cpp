@@ -29,7 +29,7 @@ int PluginWrapper::Play(unsigned int handle)
 int PluginWrapper::CreateBasicHapticEvent(float time, float strength, float duration, uint32_t area, std::string effect) {
 	flatbuffers::FlatBufferBuilder builder;
 	auto feffect = builder.CreateString(effect);
-	auto effectOffset = NullSpace::Events::CreateBasicHapticEvent(builder, time, strength, duration, area, feffect);
+	auto effectOffset = NullSpace::Events::CreateBasicHapticEvent(builder, time, strength, duration, area, 0);
 	
 	auto suitEvent = NullSpace::Events::CreateSuitEvent(builder, NullSpace::Events::SuitEventType_BasicHapticEvent, effectOffset.Union());
 
