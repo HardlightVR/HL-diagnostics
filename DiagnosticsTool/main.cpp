@@ -18,10 +18,7 @@
 
 #include "NSLoader.h"
 #include <iostream>
-#include "CPPWrapper\AreaFlags.h"
-//#include "CPPWrapper\NSVRPlugin.h"
-//#include "CPPWrapper\HapticCreator.h"
-//#include "CPPWrapper\HapticSequence.h"
+#include "AreaFlags.h"
 
 using namespace nsvr;
 static void error_callback(int error, const char* description)
@@ -30,6 +27,38 @@ static void error_callback(int error, const char* description)
 }
 
 
+
+void buzz(NSVR_System* system, uint32_t area) {
+
+	using namespace std::chrono;
+
+
+
+	NSVR_EventList* events = NSVR_EventList_Create();
+	NSVR_Event* basicEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
+
+	//One call in wrapper
+	NSVR_Event_SetFloat(basicEvent, "duration", 0.3f);
+	NSVR_Event_SetFloat(basicEvent, "strength", 1.0f);
+	NSVR_Event_SetInteger(basicEvent, "area", area);
+	NSVR_Event_SetInteger(basicEvent, "effect", NSVR_Effect::Bump); //doom_buzz
+	NSVR_Event_SetFloat(basicEvent, "time", 0.0f);
+
+	NSVR_EventList_AddEvent(events, basicEvent);
+
+	uint32_t handle = NSVR_System_GenerateHandle(system);
+
+
+	NSVR_EventList_Transmit(system, events, handle);
+
+
+	NSVR_Event_Release(basicEvent);
+	NSVR_EventList_Release(events);
+
+	NSVR_System_DoHandleCommand(system, handle, NSVR_HandleCommand::PLAY);
+
+
+}
 class ValueGraph {
 public:
 	void Render() {
@@ -163,14 +192,18 @@ int main(int, char**)
 		abort();
 	}
 
+	using namespace std::chrono;
+	auto now = steady_clock::now();
+
 	//Create the list to hold our events
 	NSVR_EventList* events = NSVR_EventList_Create();
 	float offset = 0.0f;
-	for (const auto& area : pads ) {
+	for (const auto& area : pads) {
 		NSVR_Event* myEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
+
 		NSVR_Event_SetFloat(myEvent, "duration", 0.7f);
 		NSVR_Event_SetFloat(myEvent, "strength", 1.0f);
-		NSVR_Event_SetInteger(myEvent, "area", (int)padToAreaFlag[area]);
+		NSVR_Event_SetInteger(myEvent, "area",(int) padToAreaFlag[area]);
 		NSVR_Event_SetInteger(myEvent, "effect", 666); //doom_buzz
 		NSVR_Event_SetFloat(myEvent, "time", offset);
 		NSVR_EventList_AddEvent(events, myEvent);
@@ -179,7 +212,8 @@ int main(int, char**)
 
 	unsigned int test_effect_handle = NSVR_System_GenerateHandle(system);
 	NSVR_EventList_Transmit(system, events, test_effect_handle);
-
+	auto newTime = duration_cast<microseconds>(steady_clock::now() - now);
+	std::cout << "Time (micro): " << newTime.count() << '\n';
 
     while (!glfwWindowShouldClose(window))
     {
@@ -331,9 +365,15 @@ int main(int, char**)
 						}
 						
 						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
+
+							using namespace std::chrono;
+							auto now = steady_clock::now();
+							for (int x = 0; x < 100; x++) {
+								buzz(system, (uint32_t)padToAreaFlag[pads[i].c_str()]);
+							}
+							auto newTime = duration_cast<microseconds>(steady_clock::now() - now);
+							std::cout << "Time (micro): " << newTime.count() << '\n';
 							
-							//int handle = plugin.CreateBasicHapticEvent(0.0, 1.0, 0.5, (uint32_t)padToAreaFlag[pads[i].c_str()], "doom_buzz");
-							//plugin.Play(handle);
 						}
 					}
 
