@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "LogWindow.h"
-
 void Log::Clear()
 {
 	Buf.clear();
@@ -57,17 +56,16 @@ void Log::Draw(const char * title, bool * p_open)
 	ImGui::End();
 }
 
-void ShowLog(bool * p_open)
+void ShowLog(Log& log, bool * p_open)
 {
-	static Log log;
 	static float last_time = -1.0f;
 	float time = ImGui::GetTime();
-	if (time - last_time >= 0.3f)
-	{
-		const char* random_words[] = { "system", "info", "warning", "error", "fatal", "notice", "log" };
-		log.AddLog("[engine] engine rec'd 3 effects\n");
-		last_time = time;
-	}
+	//if (time - last_time >= 0.3f)
+	//{
+	//	const char* random_words[] = { "system", "info", "warning", "error", "fatal", "notice", "log" };
+	//	log.AddLog("[engine] engine rec'd 3 effects\n");
+	//	last_time = time;
+	//}
 
 	log.Draw("Communications", p_open);
 }

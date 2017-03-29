@@ -10,4 +10,4 @@ struct Log {
 	void Draw(const char* title, bool* p_open = NULL);
 };
 
-void ShowLog(bool* p_open);
+void ShowLog(Log& log, bool* p_open);

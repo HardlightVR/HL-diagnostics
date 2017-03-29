@@ -17,6 +17,7 @@
 #include <chrono>
 
 #include "NSLoader.h"
+#include "NSLoader_Internal.h"
 #include <iostream>
 #include "AreaFlags.h"
 
@@ -26,7 +27,12 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error %d: %s\n", error, description);
 }
 
-
+bool isValidQuaternion(NSVR_Quaternion& q) {
+	return !(std::abs(q.x) < 0.001 
+		&& std::abs(q.y) < 0.001
+		&& std::abs(q.z) < 0.001
+		&& std::abs(q.w) < 0.001);
+}
 
 void buzz(NSVR_System* system, uint32_t area) {
 
@@ -49,14 +55,13 @@ void buzz(NSVR_System* system, uint32_t area) {
 	uint32_t handle = NSVR_System_GenerateHandle(system);
 
 
-	NSVR_EventList_Transmit(system, events, handle);
+	NSVR_EventList_Bind(system, events, handle);
 
 
 	NSVR_Event_Release(basicEvent);
 	NSVR_EventList_Release(events);
 
 	NSVR_System_DoHandleCommand(system, handle, NSVR_HandleCommand::PLAY);
-
 
 }
 class ValueGraph {
@@ -145,6 +150,7 @@ int main(int, char**)
 	ImVec4 clear_color = ImColor(114, 144, 154);
 
 	static bool show_app_log = true;
+	static Log log;
 
 	const char* areas[4] = { "Chest_Left", "Chest_Right", "Upper_Ab_Left", "Upper_Ab_Right" };
 	const char* ids[4] = { "0x01", "0x23", "0x42", "0x12" };
@@ -211,7 +217,7 @@ int main(int, char**)
 	}
 
 	unsigned int test_effect_handle = NSVR_System_GenerateHandle(system);
-	NSVR_EventList_Transmit(system, events, test_effect_handle);
+	NSVR_EventList_Bind(system, events, test_effect_handle);
 	auto newTime = duration_cast<microseconds>(steady_clock::now() - now);
 	std::cout << "Time (micro): " << newTime.count() << '\n';
 
@@ -268,7 +274,13 @@ int main(int, char**)
 			#pragma endregion
 
 			#pragma region Log Window
-			if (show_app_log) { ShowLog(&show_app_log); }
+			NSVR_LogEntry entry = { 0 };
+			if (NSVR_System_PollLogs(system, &entry) == 2) {
+				std::string m(entry.Message);
+				m.append("\n");
+				log.AddLog(m.c_str());
+			}
+			if (show_app_log) { ShowLog(log, &show_app_log); }
 			#pragma endregion
 			ImGui::ShowMetricsWindow();
 			#pragma region Motor Diagnostics
@@ -314,42 +326,15 @@ int main(int, char**)
 					ImGui::Text("Test all pads sequentially"); ImGui::NewLine();
 					if (ImGui::Button("Go")) {
 						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::PLAY);
-
-						//testSeq.Play(AreaFlag::All_Areas);
-						//plugin.Play(allPadsTest);
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Stop")) {
 						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::RESET);
-
-
-						//plugin.Stop(allPadsTest);
 					}
 				
 					ImGui::EndChild();
 					ImGui::PopStyleVar();
 				}
-				/*
-				{
-					static int glueBusterTimeDelay = 30;
-					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-					ImGui::BeginChild("GlueBuster", ImVec2(0, 120), true);
-					ImGui::Text("Bust glue with this great test"); ImGui::NewLine();
-					ImGui::Text("Run every");
-					ImGui::SameLine();
-					ImGui::InputInt("minutes", &glueBusterTimeDelay, 1, 5, 0);
-					if (glueBusterTimeDelay <= 1) {
-						glueBusterTimeDelay = 1;
-					}
-					ImGui::NewLine();
-					ImGui::Button("Start"); ImGui::SameLine();
-					ImGui::Button("Stop");
-					ImGui::SameLine();
-				
-				
-					ImGui::EndChild();
-					ImGui::PopStyleVar();
-				}*/
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("PadByPad", ImVec2(0, 150), true);
@@ -365,15 +350,7 @@ int main(int, char**)
 						}
 						
 						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
-
-							using namespace std::chrono;
-							auto now = steady_clock::now();
-							for (int x = 0; x < 100; x++) {
-								buzz(system, (uint32_t)padToAreaFlag[pads[i].c_str()]);
-							}
-							auto newTime = duration_cast<microseconds>(steady_clock::now() - now);
-							std::cout << "Time (micro): " << newTime.count() << '\n';
-							
+							buzz(system, (uint32_t)padToAreaFlag[pads[i].c_str()]);
 						}
 					}
 
@@ -391,32 +368,34 @@ int main(int, char**)
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
-				/*if (ImGui::Button("Enable tracking")) {
-					plugin.SetTrackingEnabled(true);
+				if (ImGui::Button("Enable tracking")) {
+					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::ENABLE_TRACKING);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Disable tracking")) {
-					plugin.SetTrackingEnabled(false);
-				}*/
+					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::DISABLE_TRACKING);
+				}
 				ImGui::NewLine();
-				/*auto tracking = plugin.PollTracking();
-				if (plugin.IsValidQuaternion(tracking.chest)) {
+
+				NSVR_TrackingUpdate tracking = { 0 };
+				NSVR_System_PollTracking(system, &tracking);
+				if (isValidQuaternion(tracking.chest)) {
 					ImGui::Text("Chest IMU");
 					display_chest.Update(tracking.chest.x, tracking.chest.y, tracking.chest.z, tracking.chest.w);
 					display_chest.Render();
 				}
-				if (plugin.IsValidQuaternion(tracking.right_upper_arm)) {
+				if (isValidQuaternion(tracking.right_upper_arm)) {
 					ImGui::Text("Right Upper Arm IMU");
 
 					display_rightUpperArm.Update(tracking.right_upper_arm.x, tracking.right_upper_arm.y, tracking.right_upper_arm.z, tracking.right_upper_arm.w);
 					display_rightUpperArm.Render();
 				}
-				if (plugin.IsValidQuaternion(tracking.left_upper_arm)) {
+				if (isValidQuaternion(tracking.left_upper_arm)) {
 					ImGui::Text("Left Upper Arm IMU");
 
 					display_leftUpperArm.Update(tracking.left_upper_arm.x, tracking.left_upper_arm.y, tracking.left_upper_arm.z, tracking.left_upper_arm.w);
 					display_leftUpperArm.Render();
-				}*/
+				}
 			
 		
 			}

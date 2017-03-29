@@ -106,9 +106,6 @@ extern "C" {
 	//Generates a unique handle to refer to the data sent in NSVR_TransmitEvents
 	NSLOADER_API unsigned int __stdcall NSVR_System_GenerateHandle(NSVR_System* ptr);
 
-	//Transmits a list of flatbuffer encoded events to the plugin, binding them to the given handle
-	NSLOADER_API NSVR_Result __stdcall NSVR_System_TransmitEvents(NSVR_System* ptr, uint32_t handle, void* data, uint32_t size);
-
 	//Manipulates the effect associated with the given handle by specifying a command
 	NSLOADER_API void __stdcall NSVR_System_DoHandleCommand(NSVR_System* ptr, uint32_t handle, NSVR_HandleCommand command);
 
@@ -119,7 +116,7 @@ extern "C" {
 	NSLOADER_API NSVR_Result  __stdcall NSVR_System_PollStatus(NSVR_System* ptr, NSVR_System_Status* status);
 	
 	//Returns a structure containing quaternion tracking data
-	NSLOADER_API void __stdcall NSVR_System_PollTracking(NSVR_System* ptr, NSVR_TrackingUpdate& q);
+	NSLOADER_API void __stdcall NSVR_System_PollTracking(NSVR_System* ptr, NSVR_TrackingUpdate* q);
 	
 	//Retrieves a newly-allocated string containing the latest error information. 
 	//Must be deallocated using NSVR_FreeError
@@ -139,7 +136,7 @@ extern "C" {
 	NSLOADER_API NSVR_EventList* __stdcall NSVR_EventList_Create();
 	NSLOADER_API void __stdcall NSVR_EventList_Release(NSVR_EventList* listPtr);
 	NSLOADER_API NSVR_Result __stdcall NSVR_EventList_AddEvent(NSVR_EventList* list, NSVR_Event* event);
-	NSLOADER_API NSVR_Result __stdcall NSVR_EventList_Transmit(NSVR_System* ptr, NSVR_EventList* listPtr, uint32_t handle);
+	NSLOADER_API NSVR_Result __stdcall NSVR_EventList_Bind(NSVR_System* ptr, NSVR_EventList* listPtr, uint32_t handle);
 
 	
 
