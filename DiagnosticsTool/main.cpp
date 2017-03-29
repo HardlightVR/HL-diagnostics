@@ -20,7 +20,7 @@
 #include "NSLoader_Internal.h"
 #include <iostream>
 #include "AreaFlags.h"
-
+#include <thread>
 using namespace nsvr;
 static void error_callback(int error, const char* description)
 {
@@ -33,6 +33,21 @@ bool isValidQuaternion(NSVR_Quaternion& q) {
 		&& std::abs(q.z) < 0.001
 		&& std::abs(q.w) < 0.001);
 }
+
+
+static void ShowHelpMarker(const char* desc)
+{
+	ImGui::TextDisabled("(?)");
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(450.0f);
+		ImGui::TextUnformatted(desc);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
 
 void buzz(NSVR_System* system, uint32_t area) {
 
@@ -47,7 +62,7 @@ void buzz(NSVR_System* system, uint32_t area) {
 	NSVR_Event_SetFloat(basicEvent, "duration", 0.3f);
 	NSVR_Event_SetFloat(basicEvent, "strength", 1.0f);
 	NSVR_Event_SetInteger(basicEvent, "area", area);
-	NSVR_Event_SetInteger(basicEvent, "effect", NSVR_Effect::Bump); //doom_buzz
+	NSVR_Event_SetInteger(basicEvent, "effect", 666); //doom_buzz
 	NSVR_Event_SetFloat(basicEvent, "time", 0.0f);
 
 	NSVR_EventList_AddEvent(events, basicEvent);
@@ -160,7 +175,7 @@ int main(int, char**)
 	QuaternionDisplay display_leftUpperArm;
 	QuaternionDisplay display_rightUpperArm;
 
-
+	bool _suitConnected = false;
 	std::map<std::string, AreaFlag> padToAreaFlag = {
 		{ "B2L", AreaFlag::Back_Left },
 
@@ -189,8 +204,29 @@ int main(int, char**)
 	
 	//Let's build the test effect. We'll iterate through all the pads, and then create an event for each.
 	
-	std::vector<std::string> pads = { "B2L", "A1L", "C1L", "C2L", "C1R", "C2R", "B2R", "A1R" , "A2L", "A3L", "C3L", "C4L", "C3R", "C4R", "A2R", "A3R"};
+	std::vector<std::string> pads = { "B2R", "A1R", "C1R", "C2R", "C1L", "C2L", "B2L", "A1L" , "A2R", "A3R", "C3R", "C4R", "C3L", "C4L", "A2L", "A3L"};
+	std::vector<AreaFlag> order = {
+		AreaFlag::Forearm_Left,
+		AreaFlag::Upper_Arm_Left,
+		AreaFlag::Shoulder_Left,
+		AreaFlag::Back_Left,
 
+		AreaFlag::Chest_Left,
+		AreaFlag::Upper_Ab_Left,
+		AreaFlag::Mid_Ab_Left,
+		AreaFlag::Lower_Ab_Left,
+
+		AreaFlag::Lower_Ab_Right,
+		AreaFlag::Mid_Ab_Right,
+		AreaFlag::Upper_Ab_Right,
+		AreaFlag::Chest_Right,
+
+		AreaFlag::Back_Right,
+		AreaFlag::Shoulder_Right,
+		AreaFlag::Upper_Arm_Right,
+		AreaFlag::Forearm_Right
+
+	};
 	//Instantiate the plugin
 	NSVR_System* system = NSVR_System_Create();
 	if (!system) {
@@ -199,17 +235,16 @@ int main(int, char**)
 	}
 
 	using namespace std::chrono;
-	auto now = steady_clock::now();
 
 	//Create the list to hold our events
 	NSVR_EventList* events = NSVR_EventList_Create();
 	float offset = 0.0f;
-	for (const auto& area : pads) {
+	for (const auto& area : order) {
 		NSVR_Event* myEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
 
 		NSVR_Event_SetFloat(myEvent, "duration", 0.7f);
 		NSVR_Event_SetFloat(myEvent, "strength", 1.0f);
-		NSVR_Event_SetInteger(myEvent, "area",(int) padToAreaFlag[area]);
+		NSVR_Event_SetInteger(myEvent, "area", (int) area);
 		NSVR_Event_SetInteger(myEvent, "effect", 666); //doom_buzz
 		NSVR_Event_SetFloat(myEvent, "time", offset);
 		NSVR_EventList_AddEvent(events, myEvent);
@@ -218,8 +253,19 @@ int main(int, char**)
 
 	unsigned int test_effect_handle = NSVR_System_GenerateHandle(system);
 	NSVR_EventList_Bind(system, events, test_effect_handle);
-	auto newTime = duration_cast<microseconds>(steady_clock::now() - now);
-	std::cout << "Time (micro): " << newTime.count() << '\n';
+	NSVR_EventList_Release(events);
+
+	NSVR_Event* superStrong = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
+	NSVR_Event_SetFloat(superStrong, "duration", 99999999.0f);
+	NSVR_Event_SetInteger(superStrong, "area", (int) AreaFlag::All_Areas);
+	NSVR_Event_SetInteger(superStrong, "effect", NSVR_Effect::Hum);
+
+	NSVR_EventList* superStrongList = NSVR_EventList_Create();
+	NSVR_EventList_AddEvent(superStrongList, superStrong);
+
+	unsigned int super_strong_handle = NSVR_System_GenerateHandle(system);
+	NSVR_EventList_Bind(system, superStrongList, super_strong_handle);
+	NSVR_EventList_Release(superStrongList);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -241,7 +287,8 @@ int main(int, char**)
 				
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 				ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
-				ImGui::Text("Service connection status");
+				ImGui::Text("Service connection status"); ImGui::SameLine();
+				ShowHelpMarker("The NullSpace VR Runtime Service must be running to use the suit. Check for the small NullSpace icon in the task bar, and make sure that it is green. If it is not green, right click it and hit 'Enable Suit'. ");
 				if (status.ConnectedToService) {
 					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
 
@@ -260,9 +307,11 @@ int main(int, char**)
 					ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
 					ImGui::Text("Suit status");
 					if (status.ConnectedToSuit) {
+						_suitConnected = true;
 						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
 					}
 					else {
+						_suitConnected = false;
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
 					}
 					ImGui::EndChild();
@@ -282,7 +331,7 @@ int main(int, char**)
 			}
 			if (show_app_log) { ShowLog(log, &show_app_log); }
 			#pragma endregion
-			ImGui::ShowMetricsWindow();
+			//ImGui::ShowMetricsWindow();
 			#pragma region Motor Diagnostics
 			ImGui::Begin("Motors");
 			{
@@ -297,16 +346,24 @@ int main(int, char**)
 					//ImGui::NextColumn();
 					ImGui::Text(ids[i]); ImGui::NextColumn();
 					ImGui::Text(areas[i]); ImGui::NextColumn();
-					if (statuses[i]) {
-						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Nominal");
-						ImGui::NextColumn();
-						ImGui::Button("Get Info"); ImGui::NextColumn();
-					}
-					else {
-						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Broken");
-						ImGui::NextColumn();
-						ImGui::Button("Diagnose"); ImGui::NextColumn();
-					} 
+				
+						if (statuses[i]) {
+							ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Nominal");
+							ImGui::NextColumn();
+							
+								ImGui::Button("Get Info"); 
+						
+							ImGui::NextColumn();
+						}
+						else {
+							ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Broken");
+							ImGui::NextColumn();
+							
+								ImGui::Button("Diagnose");
+						
+							ImGui::NextColumn();
+						}
+					
 				
 
 				}
@@ -322,9 +379,21 @@ int main(int, char**)
 			{
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-					ImGui::BeginChild("FullPower", ImVec2(0, 70), true);
-					ImGui::Text("Test all pads sequentially"); ImGui::NewLine();
-					if (ImGui::Button("Go")) {
+					ImGui::BeginChild("Warning", ImVec2(0, 30), true);
+
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Warning!"); ImGui::SameLine();
+					ImGui::Text("Do not run multiple tests at the same time");
+					ImGui::EndChild();
+					ImGui::PopStyleVar();
+				}
+
+				{
+					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+					ImGui::BeginChild("Sequential", ImVec2(0, 70), true);
+					ImGui::Text("Test all pads sequentially"); ImGui::SameLine(); 
+					ShowHelpMarker("The suit will play a strong buzz on each pad, beginning on the left forearm and traversing up to the back, then down to the bottom left ab, then up to the right back, and finally down to the right forearm."); 
+					ImGui::NewLine();
+					if (ImGui::Button("Start")) {
 						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::PLAY);
 					}
 					ImGui::SameLine();
@@ -337,9 +406,60 @@ int main(int, char**)
 				}
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-					ImGui::BeginChild("PadByPad", ImVec2(0, 150), true);
-					ImGui::Text("Test pad by pad ");
+					ImGui::BeginChild("FullPower", ImVec2(0, 70), true);
+					ImGui::Text("Activate entire suit at specified power."); ImGui::NewLine();
+					static float f1 = 1.0f;
+					static bool _isEffectPlaying;
+					bool wasSliderMoved = ImGui::SliderFloat("", &f1, 0.0f, 1.0f, "strength = %.1f");
+					ImGui::SameLine(); if (wasSliderMoved) {
+						{
+							if (!wasSliderMoved) {
+								f1 = 10.0f;
+							}
+							NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::RESET);
 					
+							NSVR_Event* superStrong = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
+							NSVR_Event_SetFloat(superStrong, "duration", 99999999.0f);
+							NSVR_Event_SetInteger(superStrong, "area", (int)AreaFlag::All_Areas);
+
+							NSVR_Event_SetFloat(superStrong, "strength", f1);
+
+						
+							NSVR_Event_SetInteger(superStrong, "effect", NSVR_Effect::Hum);
+							
+							
+							NSVR_EventList* superStrongList = NSVR_EventList_Create();
+							NSVR_EventList_AddEvent(superStrongList, superStrong);
+							NSVR_EventList_Bind(system, superStrongList, super_strong_handle);
+							NSVR_Event_Release(superStrong);
+							NSVR_EventList_Release(superStrongList);
+
+							if (_isEffectPlaying) {
+								NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::PLAY);
+							}
+
+					}
+					
+
+					}
+					if (ImGui::Button("Start")) {
+						NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::PLAY);
+						_isEffectPlaying = true;
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Stop")) {
+						NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::RESET);
+						_isEffectPlaying = false;
+					}
+
+					ImGui::EndChild();
+					ImGui::PopStyleVar();
+				}
+				{
+					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+					ImGui::BeginChild("PadByPad", ImVec2(0, 150), true);
+					ImGui::Text("Test pad by pad "); ImGui::SameLine();
+					ShowHelpMarker("Plays a strong buzz on the selected pad. Buttons are arranged as a bird's eye view of the suit.");
 					ImGui::NewLine();
 					ImGui::Columns(4);
 					
