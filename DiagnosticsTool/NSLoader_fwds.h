@@ -1,28 +1,27 @@
 #pragma once
 
-struct NSVR_System_;
 typedef struct NSVR_System_ NSVR_System;
 
 
-struct NSVR_EventList_;
-typedef struct NSVR_EventList_ NSVR_EventList;
-
-
-struct NSVR_BasicHapticEvent;
-
-typedef struct NSVR_BasicHapticEvent NSVR_BasicHapticEvent_t;
+typedef struct NSVR_Timeline_ NSVR_Timeline;
 
 
 struct NSVR_Quaternion;
 
 struct NSVR_TrackingUpdate;
 
-enum NSVR_HandleCommand;
-enum NSVR_EngineCommand;
-enum NSVR_ConnectionStatus;
+typedef enum NSVR_PlaybackCommand_ NSVR_PlaybackCommand;
+typedef enum NSVR_EngineCommand_ NSVR_EngineCommand;
 
 
-typedef int32_t NSVR_Result;
+typedef struct NSVR_ErrorInfo_  NSVR_ErrorInfo;
 
-struct NSVR_System_Status_;
+typedef enum NSVR_SuccessTypes_ NSVR_SuccessTypes;
+
+typedef enum NSVR_ErrorTypes_ NSVR_ErrorTypes;
+
+
 typedef struct NSVR_System_Status_ NSVR_System_Status;
+
+typedef enum NSVR_PlaybackCommand_ NSVR_PlaybackCommand;
+

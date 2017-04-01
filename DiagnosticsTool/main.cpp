@@ -48,35 +48,44 @@ static void ShowHelpMarker(const char* desc)
 	}
 }
 
+NSVR_Event* createEvent(float time, float duration, float strength, int area, int effect) {
+	NSVR_Event* event = nullptr;
+	NSVR_Event_Create(&event, NSVR_EventType::NSVR_EventType_BasicHapticEvent);
+	NSVR_Event_SetFloat(event, "duration",duration);
+	NSVR_Event_SetFloat(event, "strength", strength);
+	NSVR_Event_SetInteger(event, "area", area);
+	NSVR_Event_SetInteger(event, "effect", effect); 
+	NSVR_Event_SetFloat(event, "time", time);
+	return event;
+}
 
-void buzz(NSVR_System* system, uint32_t area) {
+NSVR_PlaybackHandle* createHandle(NSVR_Timeline* timeline) {
+	NSVR_PlaybackHandle* handle = nullptr;
+	NSVR_PlaybackHandle_Create(&handle);
+	NSVR_Result result = NSVR_Timeline_Transmit(timeline, handle);
+	//NSVR_Result result = NSVR_PlaybackHandle_Bind(handle, timeline);
+	
+	if (NSVR_FAILURE(result)) {
+		std::cout << "result: " << result;
+	}
+	return handle;
+}
+void makeBuzz(NSVR_System* system, uint32_t area) {
 
-	using namespace std::chrono;
+	//create a timeline
+	NSVR_Timeline* timeline = nullptr;
+	NSVR_Timeline_Create(&timeline, system);
+	//add a buzz to the timeline
+	NSVR_Event* buzz = createEvent(0.0f, 0.3f, 1.0f, area, 666);
+	NSVR_Timeline_AddEvent(timeline, buzz);
 
+	//create a handle from the timeline
+	NSVR_PlaybackHandle* handle = createHandle(timeline);
 
-
-	NSVR_EventList* events = NSVR_EventList_Create();
-	NSVR_Event* basicEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
-
-	//One call in wrapper
-	NSVR_Event_SetFloat(basicEvent, "duration", 0.3f);
-	NSVR_Event_SetFloat(basicEvent, "strength", 1.0f);
-	NSVR_Event_SetInteger(basicEvent, "area", area);
-	NSVR_Event_SetInteger(basicEvent, "effect", 666); //doom_buzz
-	NSVR_Event_SetFloat(basicEvent, "time", 0.0f);
-
-	NSVR_EventList_AddEvent(events, basicEvent);
-
-	uint32_t handle = NSVR_System_GenerateHandle(system);
-
-
-	NSVR_EventList_Bind(system, events, handle);
-
-
-	NSVR_Event_Release(basicEvent);
-	NSVR_EventList_Release(events);
-
-	NSVR_System_DoHandleCommand(system, handle, NSVR_HandleCommand::PLAY);
+	//play & release
+	NSVR_PlaybackHandle_Command(handle, NSVR_PlaybackCommand::NSVR_PlaybackCommand_Play);
+	NSVR_PlaybackHandle_Release(&handle);
+	NSVR_Timeline_Release(&timeline);
 
 }
 class ValueGraph {
@@ -129,6 +138,25 @@ private:
 	ValueGraph _wGraph;
 };
 
+void memLeakChecker(NSVR_System* system) {
+	NSVR_Timeline* timeline = nullptr;
+	NSVR_Timeline_Create(&timeline, system);
+
+	for (int i = 0; i < 1000; i++) {
+		NSVR_Event* event = createEvent(0, 0, 0, 0, NSVR_Effect::NSVR_Effect_Bump);
+		NSVR_Timeline_AddEvent(timeline, event);
+		NSVR_Event_Release(&event);
+	}
+
+	NSVR_Timeline_Release(&timeline);
+}
+
+
+void memLeakChecker2(NSVR_System* system) {
+	for (int i = 0; i < 10; i++) {
+		memLeakChecker(system);
+	}
+}
 int main(int, char**)
 {
 	// Setup window
@@ -228,53 +256,42 @@ int main(int, char**)
 
 	};
 	//Instantiate the plugin
-	NSVR_System* system = NSVR_System_Create();
-	if (!system) {
+	NSVR_System* system = nullptr;
+	if (NSVR_System_Create(&system) != NSVR_Success_Unqualified) {
 		std::cout << "Failed to instantiate the NSVR Plugin";
 		abort();
 	}
 
 	using namespace std::chrono;
 
-	//Create the list to hold our events
-	NSVR_EventList* events = NSVR_EventList_Create();
+
+	
+
+	NSVR_Timeline* padByPad = nullptr;
+	NSVR_Timeline_Create(&padByPad, system);
 	float offset = 0.0f;
 	for (const auto& area : order) {
-		NSVR_Event* myEvent = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
-
-		NSVR_Event_SetFloat(myEvent, "duration", 0.7f);
-		NSVR_Event_SetFloat(myEvent, "strength", 1.0f);
-		NSVR_Event_SetInteger(myEvent, "area", (int) area);
-		NSVR_Event_SetInteger(myEvent, "effect", 666); //doom_buzz
-		NSVR_Event_SetFloat(myEvent, "time", offset);
-		NSVR_EventList_AddEvent(events, myEvent);
+		NSVR_Event* myEvent = createEvent(offset, 0.7f, 1.0f, (int)area, 666);
+		NSVR_Timeline_AddEvent(padByPad, myEvent);
+		NSVR_Event_Release(&myEvent);
 		offset += 1.0f;
 	}
 
-	unsigned int test_effect_handle = NSVR_System_GenerateHandle(system);
-	NSVR_EventList_Bind(system, events, test_effect_handle);
-	NSVR_EventList_Release(events);
-
-	NSVR_Event* superStrong = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
-	NSVR_Event_SetFloat(superStrong, "duration", 99999999.0f);
-	NSVR_Event_SetInteger(superStrong, "area", (int) AreaFlag::All_Areas);
-	NSVR_Event_SetInteger(superStrong, "effect", NSVR_Effect::Hum);
-
-	NSVR_EventList* superStrongList = NSVR_EventList_Create();
-	NSVR_EventList_AddEvent(superStrongList, superStrong);
-
-	unsigned int super_strong_handle = NSVR_System_GenerateHandle(system);
-	NSVR_EventList_Bind(system, superStrongList, super_strong_handle);
-	NSVR_EventList_Release(superStrongList);
+	NSVR_PlaybackHandle* padByPadHandle = createHandle(padByPad);
 
     while (!glfwWindowShouldClose(window))
     {
+		using namespace std::chrono;
+		auto now = steady_clock::now();
+	//	memLeakChecker2(system);
+		auto future = duration_cast<microseconds>(steady_clock::now() - now);
+		std::cout << "Time (micro): " << future.count() << '\n';
+
         glfwPollEvents();
        
 		ImGui_ImplGlfwGL3_NewFrame();
 
-        // 1. Show a simple window
-        // Tip: if we don't call ImGui::Begin()/ImGui::End() the widgets appears in a window automatically called "Debug"
+     
 		{
 			#pragma region Status Window
 
@@ -324,14 +341,14 @@ int main(int, char**)
 
 			#pragma region Log Window
 			NSVR_LogEntry entry = { 0 };
-			if (NSVR_System_PollLogs(system, &entry) == 2) {
-				std::string m(entry.Message);
-				m.append("\n");
-				log.AddLog(m.c_str());
-			}
+			//if (NSVR_System_PollLogs(system, &entry) == 2) {
+			//	std::string m(entry.Message);
+			//	m.append("\n");
+			//	log.AddLog(m.c_str());
+			//}
 			if (show_app_log) { ShowLog(log, &show_app_log); }
 			#pragma endregion
-			//ImGui::ShowMetricsWindow();
+			ImGui::ShowMetricsWindow();
 			#pragma region Motor Diagnostics
 			ImGui::Begin("Motors");
 			{
@@ -390,15 +407,16 @@ int main(int, char**)
 				{
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("Sequential", ImVec2(0, 70), true);
-					ImGui::Text("Test all pads sequentially"); ImGui::SameLine(); 
-					ShowHelpMarker("The suit will play a strong buzz on each pad, beginning on the left forearm and traversing up to the back, then down to the bottom left ab, then up to the right back, and finally down to the right forearm."); 
+					ImGui::Text("Test all pads sequentially"); ImGui::SameLine();
+					ShowHelpMarker("The suit will play a strong buzz on each pad, beginning on the left forearm and traversing up to the back, then down to the bottom left ab, then up to the right back, and finally down to the right forearm.");
 					ImGui::NewLine();
 					if (ImGui::Button("Start")) {
-						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::PLAY);
+						NSVR_PlaybackHandle_Command(padByPadHandle, NSVR_PlaybackCommand_Reset);
+						NSVR_PlaybackHandle_Command(padByPadHandle, NSVR_PlaybackCommand_Play);
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Stop")) {
-						NSVR_System_DoHandleCommand(system, test_effect_handle, NSVR_HandleCommand::RESET);
+						NSVR_PlaybackHandle_Command(padByPadHandle, NSVR_PlaybackCommand_Reset);
 					}
 				
 					ImGui::EndChild();
@@ -411,44 +429,58 @@ int main(int, char**)
 					static float f1 = 1.0f;
 					static bool _isEffectPlaying;
 					bool wasSliderMoved = ImGui::SliderFloat("", &f1, 0.0f, 1.0f, "strength = %.1f");
-					ImGui::SameLine(); if (wasSliderMoved) {
-						{
-							if (!wasSliderMoved) {
-								f1 = 10.0f;
-							}
-							NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::RESET);
+
 					
-							NSVR_Event* superStrong = NSVR_Event_Create(NSVR_EventType::BASIC_HAPTIC_EVENT);
-							NSVR_Event_SetFloat(superStrong, "duration", 99999999.0f);
-							NSVR_Event_SetInteger(superStrong, "area", (int)AreaFlag::All_Areas);
+					auto bindHumEvents = [&system](NSVR_PlaybackHandle* handle, float strength) {
+						NSVR_Timeline* timeline = nullptr;
+						NSVR_Timeline_Create(&timeline, system);
+						NSVR_Event* event = createEvent(0.0, 9999999.0f, strength, (int)AreaFlag::All_Areas, NSVR_Effect_Hum);
+						NSVR_Timeline_AddEvent(timeline, event);
 
-							NSVR_Event_SetFloat(superStrong, "strength", f1);
+						NSVR_Timeline_Transmit(timeline, handle);
+					//	NSVR_PlaybackHandle_Bind(handle, timeline);
 
-						
-							NSVR_Event_SetInteger(superStrong, "effect", NSVR_Effect::Hum);
-							
-							
-							NSVR_EventList* superStrongList = NSVR_EventList_Create();
-							NSVR_EventList_AddEvent(superStrongList, superStrong);
-							NSVR_EventList_Bind(system, superStrongList, super_strong_handle);
-							NSVR_Event_Release(superStrong);
-							NSVR_EventList_Release(superStrongList);
+
+						NSVR_Timeline_Release(&timeline);
+						NSVR_Event_Release(&event);
+
+					};
+					static NSVR_PlaybackHandle* variableStrengthHandle = nullptr;
+					if (variableStrengthHandle == nullptr) {
+						if (NSVR_FAILURE(NSVR_PlaybackHandle_Create(&variableStrengthHandle))) {
+							std::cout << "failed to make variablestrength handle\n";
+						}
+						else {
+							bindHumEvents(variableStrengthHandle, f1);
+
+						}
+					}
+
+					
+					//copy
+
+					ImGui::SameLine(); 
+					if (wasSliderMoved) {
+					{
+							NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Reset);
+
+							bindHumEvents(variableStrengthHandle, f1);
 
 							if (_isEffectPlaying) {
-								NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::PLAY);
-							}
+								NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Play);
 
+							}
 					}
 					
-
+					
 					}
 					if (ImGui::Button("Start")) {
-						NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::PLAY);
+						NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Play);
 						_isEffectPlaying = true;
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Stop")) {
-						NSVR_System_DoHandleCommand(system, super_strong_handle, NSVR_HandleCommand::RESET);
+						NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Reset);
 						_isEffectPlaying = false;
 					}
 
@@ -470,7 +502,8 @@ int main(int, char**)
 						}
 						
 						if (ImGui::Button(pads[i].c_str(), ImVec2(-1.0f, 0.0f))) {
-							buzz(system, (uint32_t)padToAreaFlag[pads[i].c_str()]);
+							uint32_t area = (uint32_t)padToAreaFlag[pads[i].c_str()];
+							makeBuzz(system, area);
 						}
 					}
 
@@ -489,11 +522,11 @@ int main(int, char**)
 			ImGui::Begin("Tracking");
 			{
 				if (ImGui::Button("Enable tracking")) {
-					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::ENABLE_TRACKING);
+					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::NSVR_EngineCommand_EnableTracking);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Disable tracking")) {
-					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::DISABLE_TRACKING);
+					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::NSVR_EngineCommand_DisableTracking);
 				}
 				ImGui::NewLine();
 
@@ -548,7 +581,7 @@ int main(int, char**)
 	glDeleteProgram(programID);
 	glDeleteVertexArrays(1, &VertexArrayID);
 
-	NSVR_System_Release(system);
+	NSVR_System_Release(&system);
 
     // Cleanup
     ImGui_ImplGlfwGL3_Shutdown();
