@@ -10,9 +10,6 @@ struct NSVR_Quaternion;
 
 struct NSVR_TrackingUpdate;
 
-typedef enum NSVR_PlaybackCommand_ NSVR_PlaybackCommand;
-typedef enum NSVR_EngineCommand_ NSVR_EngineCommand;
-
 
 typedef struct NSVR_ErrorInfo_  NSVR_ErrorInfo;
 
@@ -21,7 +18,9 @@ typedef enum NSVR_SuccessTypes_ NSVR_SuccessTypes;
 typedef enum NSVR_ErrorTypes_ NSVR_ErrorTypes;
 
 
-typedef struct NSVR_System_Status_ NSVR_System_Status;
-
 typedef enum NSVR_PlaybackCommand_ NSVR_PlaybackCommand;
 
+typedef struct NSVR_DeviceInfo_  NSVR_DeviceInfo;
+
+
+typedef struct NSVR_ServiceInfo_  NSVR_ServiceInfo;

@@ -285,7 +285,7 @@ int main(int, char**)
 		auto now = steady_clock::now();
 	//	memLeakChecker2(system);
 		auto future = duration_cast<microseconds>(steady_clock::now() - now);
-		std::cout << "Time (micro): " << future.count() << '\n';
+		//std::cout << "Time (micro): " << future.count() << '\n';
 
         glfwPollEvents();
        
@@ -295,8 +295,10 @@ int main(int, char**)
 		{
 			#pragma region Status Window
 
-			NSVR_System_Status status = { 0 };
-			NSVR_System_PollStatus(system, &status);
+			
+	
+			NSVR_Result serviceConnected = NSVR_System_GetServiceInfo(system, nullptr);
+			NSVR_Result deviceConnected = NSVR_System_GetDeviceInfo(system, nullptr);
 
 
 			ImGui::Begin("Status");
@@ -306,7 +308,7 @@ int main(int, char**)
 				ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
 				ImGui::Text("Service connection status"); ImGui::SameLine();
 				ShowHelpMarker("The NullSpace VR Runtime Service must be running to use the suit. Check for the small NullSpace icon in the task bar, and make sure that it is green. If it is not green, right click it and hit 'Enable Suit'. ");
-				if (status.ConnectedToService) {
+				if (NSVR_SUCCESS(serviceConnected)) {
 					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
 
 				}
@@ -319,11 +321,11 @@ int main(int, char**)
 				
 			}
 			{
-				if (status.ConnectedToService) {
+				if (NSVR_SUCCESS(serviceConnected)) {
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
 					ImGui::Text("Suit status");
-					if (status.ConnectedToSuit) {
+					if (NSVR_SUCCESS(deviceConnected)) {
 						_suitConnected = true;
 						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
 					}
@@ -341,11 +343,11 @@ int main(int, char**)
 
 			#pragma region Log Window
 			NSVR_LogEntry entry = { 0 };
-			//if (NSVR_System_PollLogs(system, &entry) == 2) {
-			//	std::string m(entry.Message);
-			//	m.append("\n");
-			//	log.AddLog(m.c_str());
-			//}
+			if (NSVR_System_PollLogs(system, &entry) == NSVR_Success_Unqualified) {
+				std::string m(entry.Message);
+				m.append("\n");
+				log.AddLog(m.c_str());
+			}
 			if (show_app_log) { ShowLog(log, &show_app_log); }
 			#pragma endregion
 			ImGui::ShowMetricsWindow();
@@ -517,21 +519,59 @@ int main(int, char**)
 			}
 			ImGui::End();
 			#pragma endregion
+#pragma region Stats
+			static float liveEffects[32] = { 0 };
+			static float orphanedEffects[32] = { 0 };
 
+			ImGui::Begin("Stats");
+			{
+				NSVR_SystemStats stat = { 0 };
+				NSVR_System_GetStats(system, &stat);
+				ImGui::Text("Live effects");
+
+				for (int i = 0; i < 31; i++) {
+					if (i == 0) {
+						continue;
+					}
+					liveEffects[i] = liveEffects[i + 1];
+
+				}
+				liveEffects[31] = stat.NumLiveEffects;
+
+				ImGui::PlotHistogram("", liveEffects, 32, 0, NULL, 0.0f, 10.0f, ImVec2(0, 60));
+
+
+
+				ImGui::Text("Orphaned effects");
+		
+				for (int i = 0; i <31; i++) {
+					if (i == 0) {
+						continue;
+					}
+					orphanedEffects[i] = orphanedEffects[i + 1];
+
+				}
+				orphanedEffects[31] = stat.NumOrphanedEffects;
+
+				ImGui::PlotHistogram("", orphanedEffects, 32, 0, NULL, 0.0f, 10.0f, ImVec2(0, 60));
+			}
+			ImGui::End();
+#pragma endregion
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
 				if (ImGui::Button("Enable tracking")) {
-					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::NSVR_EngineCommand_EnableTracking);
+					NSVR_System_Tracking_Enable(system);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Disable tracking")) {
-					NSVR_System_DoEngineCommand(system, NSVR_EngineCommand::NSVR_EngineCommand_DisableTracking);
+					NSVR_System_Tracking_Disable(system);
 				}
 				ImGui::NewLine();
 
 				NSVR_TrackingUpdate tracking = { 0 };
-				NSVR_System_PollTracking(system, &tracking);
+				NSVR_System_Tracking_Poll(system, &tracking);
+
 				if (isValidQuaternion(tracking.chest)) {
 					ImGui::Text("Chest IMU");
 					display_chest.Update(tracking.chest.x, tracking.chest.y, tracking.chest.z, tracking.chest.w);

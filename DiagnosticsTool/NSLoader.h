@@ -20,44 +20,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+	/* Primitives */
 
+	//System represents the NSVR plugin context. 
 	typedef struct NSVR_System_ NSVR_System;
 
-	
+	//Events tell the hardware to do certain things, like play a haptic effect
+	typedef struct NSVR_Event_ NSVR_Event;
+
+	//Timelines are event containers, where each event has a specific time offset
 	typedef struct NSVR_Timeline_ NSVR_Timeline;
 
+	//A PlaybackHandle is used to start, stop, reset timelines which have been transmitted to the system
+	typedef struct NSVR_PlaybackHandle_ NSVR_PlaybackHandle;
 
-	/*
-	
-	NSVR_Timeline* timeline;
-	NSVR_Timeline_Create(timeline); //should system be injected here
-
-
-	NSVR_Event* basicHaptic;
-	NSVR_Event_Create(basicHaptic, NSVR_EventType_BasicHaptic);
-	NSVR_Event_SetFloat(basicHaptic, "duration", 3.0f);
-	NSVR_Event_SetInt(basicHaptic, "area", NSVR_AreaFlag_ChestLeft);
-
-
-	NSVR_Timeline_Add(timeline, basicHaptic, 0.0); //should time be specified here
-
-	NSVR_Timeline_Bind(system, timeline, handle); //or here
-
-	//Future
-
-	NSVR_Timeline_Attributes attribs;
-	NSVR_Timeline_GetAttributes(timeline, &attribs);
-	attribs.PlaybackSpeed = 0.5;
-	attribs.Looping = true;
-	attribs.LoopDelay = 0.15;
-	NSVR_Timeline_SetAttributes(timeline, &attribs);
-	
-	
-	*/
-	//Will there be a time when the source doesn't contain time-indexed events?
-	//Should NSVR_EventSequence_Add() take a time parameter to be explicit? 
-
-	
 
 	typedef enum NSVR_Effect_ {
 		NSVR_Effect_Bump = 1,
@@ -72,14 +48,13 @@ extern "C" {
 		NSVR_Effect_Max = 4294967295
 	} NSVR_Effect;
 
-
-
 	struct NSVR_Quaternion {
 		float w;
 		float x;
 		float y;
 		float z;
 	};
+
 	struct NSVR_TrackingUpdate {
 		NSVR_Quaternion chest;
 		NSVR_Quaternion left_upper_arm;
@@ -88,17 +63,7 @@ extern "C" {
 		NSVR_Quaternion right_forearm;
 	};
 
-	struct NSVR_System_Status_ {
-		int ConnectedToService;
-		int ConnectedToSuit;
-	};
 
-	typedef struct NSVR_PlaybackHandle_ NSVR_PlaybackHandle;
-
-	typedef struct NSVR_System_Status_ NSVR_System_Status;
-
-	struct NSVR_Event_;
-	typedef struct NSVR_Event_ NSVR_Event;
 	typedef enum NSVR_PlaybackCommand_
 	{
 		NSVR_PlaybackCommand_Play = 0,
@@ -106,15 +71,7 @@ extern "C" {
 		NSVR_PlaybackCommand_Reset
 	} NSVR_PlaybackCommand;
 
-	typedef enum NSVR_EngineCommand_
-	{
-		NSVR_EngineCommand_ResumeAll = 1, 
-		NSVR_EngineCommand_PauseAll, 
-		NSVR_EngineCommand_DestroyAll, 
-		NSVR_EngineCommand_EnableTracking, 
-		NSVR_EngineCommand_DisableTracking
-	} NSVR_EngineCommand;
-
+	
 
 	typedef enum NSVR_EventType_ {
 		NSVR_EventType_BasicHapticEvent = 1,
@@ -122,12 +79,23 @@ extern "C" {
 	} NSVR_EventType;
 
 
+	typedef struct NSVR_DeviceInfo_ {
+		char ProductName[128];
+		short FirmwareMajor;
+		short FirmwareMinor;
+		//tracking capabilities?
+	} NSVR_DeviceInfo;
 
 
-	//Creates a new instance of the plugin
+	typedef struct NSVR_ServiceInfo_ {
+		unsigned int ServiceMajor;
+		unsigned int ServiceMinor;
+	} NSVR_ServiceInfo;
+
+	//Creates a new instance of the system
 	NSLOADER_API NSVR_Result __stdcall NSVR_System_Create(NSVR_System** systemPtr);
 
-	//Destroys the plugin, releasing memory allocated to it
+	//Destroys the system
 	NSLOADER_API void __stdcall NSVR_System_Release(NSVR_System** ptr);
 
 	//Returns the version of this plugin, in the format ((Major << 16) | Minor)
@@ -136,30 +104,41 @@ extern "C" {
 	//Returns true if the plugin is compatible with this header, false otherwise
 	NSLOADER_API  int __stdcall NSVR_IsCompatibleDLL(void);
 
-
-	//Commands the plugin, e.g. ENABLE_TRACKING
-	NSLOADER_API NSVR_Result __stdcall NSVR_System_DoEngineCommand(NSVR_System* ptr, NSVR_EngineCommand command);
-
 	//Returns true if a suit is plugged in and the service is running, else false
-	NSLOADER_API NSVR_Result  __stdcall NSVR_System_PollStatus(NSVR_System* ptr, NSVR_System_Status* status);
-	
-	//Returns a structure containing quaternion tracking data
-	NSLOADER_API NSVR_Result __stdcall NSVR_System_PollTracking(NSVR_System* ptr, NSVR_TrackingUpdate* q);
-	
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_GetServiceInfo(NSVR_System* systemPtr, NSVR_ServiceInfo* infoPtr);
 
+	/* Haptics engine */ 
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Haptics_Pause(NSVR_System* ptr);
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Haptics_Resume(NSVR_System* ptr);
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Haptics_Destroy(NSVR_System* ptr);
+
+
+	/* Devices */
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_GetDeviceInfo(NSVR_System* systemPtr, NSVR_DeviceInfo* infoPtr);
+
+	/* Tracking */
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Tracking_Poll(NSVR_System* ptr, NSVR_TrackingUpdate* updatePtr);
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Tracking_Enable(NSVR_System* ptr);
+	NSLOADER_API NSVR_Result __stdcall NSVR_System_Tracking_Disable(NSVR_System* ptr);
+
+
+	/* ---- Timeline API ---- */
+
+	/* Events */
 	NSLOADER_API NSVR_Result __stdcall NSVR_Event_Create(NSVR_Event** eventPtr, NSVR_EventType type);
 	NSLOADER_API void __stdcall NSVR_Event_Release(NSVR_Event** event);
 	NSLOADER_API NSVR_Result __stdcall NSVR_Event_SetFloat(NSVR_Event* event, const char* key, float value);
 	NSLOADER_API NSVR_Result __stdcall NSVR_Event_SetInteger(NSVR_Event* event, const char* key, int value);
 
 
-
+	/* Timelines */
 	NSLOADER_API NSVR_Result __stdcall NSVR_Timeline_Create(NSVR_Timeline** eventListPtr, NSVR_System* systemPtr);
 	NSLOADER_API void __stdcall NSVR_Timeline_Release(NSVR_Timeline** listPtr);
 	NSLOADER_API NSVR_Result __stdcall NSVR_Timeline_AddEvent(NSVR_Timeline* list, NSVR_Event* event);
 	NSLOADER_API NSVR_Result __stdcall NSVR_Timeline_Transmit(NSVR_Timeline* timeline, NSVR_PlaybackHandle* handlePr);
+
+	/* Playback */
 	NSLOADER_API NSVR_Result __stdcall NSVR_PlaybackHandle_Create(NSVR_PlaybackHandle** handlePtr);
-	NSLOADER_API NSVR_Result __stdcall NSVR_PlaybackHandle_Bind(NSVR_PlaybackHandle* handlePtr, NSVR_Timeline* timelinePtr);
 	NSLOADER_API NSVR_Result __stdcall NSVR_PlaybackHandle_Command(NSVR_PlaybackHandle* handlePtr, NSVR_PlaybackCommand command);
 	NSLOADER_API void __stdcall NSVR_PlaybackHandle_Release(NSVR_PlaybackHandle** handlePtr);
 
