@@ -24,7 +24,12 @@ extern "C" {
 		uint32_t Length; 
 	} NSVR_LogEntry;
 
-
+	typedef struct NSVR_AudioOptions_ {
+		uint8_t AudioMax;
+		uint8_t AudioMin;
+		uint8_t PeakTime;
+		uint8_t Filter;
+	} NSVR_AudioOptions;
 
 	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_PollLogs(NSVR_System* system, NSVR_LogEntry* entry);
 
@@ -35,6 +40,11 @@ extern "C" {
 	
 
 	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_GetStats(NSVR_System* system, NSVR_SystemStats* ptr);
+
+	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_Audio_Enable(NSVR_System* system, NSVR_AudioOptions* optionsPtr);
+
+	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_Audio_Disable(NSVR_System* system);
+
 #ifdef __cplusplus
 }
 #endif

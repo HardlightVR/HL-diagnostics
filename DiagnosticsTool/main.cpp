@@ -557,6 +557,73 @@ int main(int, char**)
 			}
 			ImGui::End();
 #pragma endregion
+
+
+#pragma region Modes
+		
+
+			ImGui::Begin("Modes");
+			{
+
+				ImGui::Text("Set mode of the suit");
+				if (ImGui::Button("Enable audio mode")) {
+					NSVR_System_Audio_Enable(system, nullptr);
+				}
+				if (ImGui::Button("Disable audio mode")) {
+					NSVR_System_Audio_Disable(system);
+
+				}
+				static int audio_min = 0x04;
+				static int audio_max = 0x22;
+				static int filter = 0x01;
+				static int peak_time = 0x01;
+
+				bool changed = false;
+				changed |= ImGui::SliderInt("Audio max", &audio_max, 0, 255);
+				changed |= ImGui::SliderInt("Audio min", &audio_min, 0, 255);
+				changed |= ImGui::SliderInt("Peak time", &peak_time, 0, 3);
+				changed |= ImGui::SliderInt("Filter", &filter, 0,3);
+
+				if (changed) {
+					NSVR_AudioOptions options = { 0 };
+					options.AudioMax = audio_max;
+					options.AudioMin = audio_min;
+					options.Filter = filter;
+					options.PeakTime = peak_time;
+
+					NSVR_System_Audio_Enable(system, &options);
+				}
+
+
+
+			}
+			ImGui::End();
+#pragma endregion
+
+#pragma region Hex input
+
+
+			ImGui::Begin("Hex Console");
+			{
+
+				static char buf[64]; 
+				memset(buf, 0, 64);
+
+				if (ImGui::InputText("", buf, 64, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue)) {
+					
+					
+					memset(buf, 0, 64);
+
+				}
+
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetKeyboardFocusHere(-1);
+				}
+
+
+			}
+			ImGui::End();
+#pragma endregion
 			#pragma region Tracking View 
 			ImGui::Begin("Tracking");
 			{
