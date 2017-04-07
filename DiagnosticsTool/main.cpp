@@ -21,7 +21,17 @@
 #include <iostream>
 #include "AreaFlags.h"
 #include <thread>
+#include <sstream>
+
+#include "JsonKeyValueConfig.h"
 using namespace nsvr;
+
+unsigned char hex2byte(char digit)
+{
+	char hexDigit = toupper(digit);
+	return hexDigit >= 'A' ? hexDigit - 'A' + 10 : hexDigit - '0';
+}
+
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
@@ -157,6 +167,44 @@ void memLeakChecker2(NSVR_System* system) {
 		memLeakChecker(system);
 	}
 }
+
+inline uint8_t AsciiHexToByte(char digit1, char digit2)
+{
+	return hex2byte(digit1) * 16 + hex2byte(digit2);
+}
+
+#define DRV_STATUS_NOMINAL 1
+#define DRV_STATUS_UNKNOWN 0
+#define DRV_STATUS_OVERCURRENT 2
+#define DRV_STATUS_OVERTEMP 3
+#define DRV_STATUS_OVERCURRENT_OVERTEMP 4
+
+void processDrvDiagnostics(std::string m, int* stats, const char** ids)
+{
+	int drv_id = 0;
+	int over_current = 0;
+	int over_temp = 0;
+	sscanf_s(m.c_str(), "[DriverMain] DRVDIAG %d,%d,%d",  &drv_id, &over_current, &over_temp);
+
+	for (int i = 0; i < 16; i++) {
+		//"0x19"
+		if (AsciiHexToByte(ids[i][2], ids[i][3]) == drv_id) {
+			if (over_current && over_temp) {
+				stats[i] = DRV_STATUS_OVERCURRENT_OVERTEMP;
+			}
+			else if (over_current) {
+				stats[i] = DRV_STATUS_OVERCURRENT;
+			}
+			else if (over_temp) {
+				stats[i] = DRV_STATUS_OVERTEMP;
+			}
+			else {
+				stats[i] = DRV_STATUS_NOMINAL;
+			}
+		}
+	}
+}
+
 int main(int, char**)
 {
 	// Setup window
@@ -195,9 +243,17 @@ int main(int, char**)
 	static bool show_app_log = true;
 	static Log log;
 
-	const char* areas[4] = { "Chest_Left", "Chest_Right", "Upper_Ab_Left", "Upper_Ab_Right" };
-	const char* ids[4] = { "0x01", "0x23", "0x42", "0x12" };
-	const int statuses[4] = { 1,1,0, 1 };
+	const char* areas[16] = { "Forearm Left", "Forearm Right","Upper Arm Left", "Upper Arm Right",  "Shoulder Left", "Shoulder Right", "Upper Back Left", "Upper Back Right",  "Chest Left", "Chest Right", "Upper Ab Left", "Upper Ab Right", "Mid Ab Left", "Mid Ab Right", "Lower Ab Left", "Lower Ab Right"};
+	const char* ids[16] =   { "0x10"        , "0x18",         "0x16",           "0x1E",             "0x17",           "0x1F",          "0x11",            "0x19",               "0x15",      "0x1D",        "0x12",         "0x1A",            "0x13",       "0x1B",          "0x12",          "0x1A" };
+	int statuses[16] = { DRV_STATUS_UNKNOWN };
+
+	auto parseHexValue = [](const Json::Value& val) {
+		const char* hexChars = &val.asCString()[2];
+		return AsciiHexToByte(hexChars[0], hexChars[1]);
+	};
+
+	auto zones = nsvr::tools::json::parseDictFromDict<std::string, uint8_t>("Zones.json", [](auto val) { return val.asString(); }, parseHexValue);
+
 	// Main loop
 	QuaternionDisplay display_chest;
 	QuaternionDisplay display_leftUpperArm;
@@ -345,50 +401,97 @@ int main(int, char**)
 			NSVR_LogEntry entry = { 0 };
 			if (NSVR_System_PollLogs(system, &entry) == NSVR_Success_Unqualified) {
 				std::string m(entry.Message);
-				m.append("\n");
-				log.AddLog(m.c_str());
+				if (m.find("DRVDIAG") != std::string::npos) {
+					processDrvDiagnostics(m, statuses, ids);
+				}
+				else {
+					m.append("\n");
+					log.AddLog(m.c_str());
+				}
 			}
 			if (show_app_log) { ShowLog(log, &show_app_log); }
 			#pragma endregion
 			ImGui::ShowMetricsWindow();
+
+
 			#pragma region Motor Diagnostics
 			ImGui::Begin("Motors");
 			{
-				ImGui::Columns(4, "mycolumns4", false);
+				ImGui::Columns(3, "mycolumns4", false);
 				ImGui::Separator();
 				ImGui::Text("ID"); ImGui::NextColumn();
 				ImGui::Text("Name"); ImGui::NextColumn();
 				ImGui::Text("Status"); ImGui::NextColumn();
-				ImGui::Text("Operation"); ImGui::NextColumn();
+			//	ImGui::Text("Operation"); ImGui::NextColumn();
 				ImGui::Separator();
-				for (int i = 0; i < 4; i++) {
+				for (int i = 0; i < 16; i++) {
 					//ImGui::NextColumn();
 					ImGui::Text(ids[i]); ImGui::NextColumn();
 					ImGui::Text(areas[i]); ImGui::NextColumn();
-				
-						if (statuses[i]) {
-							ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Nominal");
-							ImGui::NextColumn();
-							
-								ImGui::Button("Get Info"); 
-						
-							ImGui::NextColumn();
-						}
-						else {
-							ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Broken");
-							ImGui::NextColumn();
-							
-								ImGui::Button("Diagnose");
-						
-							ImGui::NextColumn();
-						}
-					
-				
 
+					if (statuses[i] == DRV_STATUS_NOMINAL) {
+						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Nominal");
+						ImGui::SameLine();
+						ShowHelpMarker("The motor is functioning normally");
+						ImGui::NextColumn();
+					//	ImGui::Button("-- unimplemented --");
+			//			ImGui::NextColumn();
+					}
+					else if (statuses[i] == DRV_STATUS_UNKNOWN) {
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "Unknown");
+						ImGui::SameLine();
+						ShowHelpMarker("Refresh the diagnostics");
+						ImGui::NextColumn();
+					//	ImGui::Button("-- unimplemented --");
+				//		ImGui::NextColumn();
+					}
+					else if (statuses[i] == DRV_STATUS_OVERCURRENT){
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over current");
+						ImGui::SameLine();
+						ShowHelpMarker("Motor stall: may be stuck or damaged");
+						ImGui::NextColumn();
+					//	ImGui::Button("-- unimplemented --");
+					//	ImGui::NextColumn();
+					}
+					else if (statuses[i] == DRV_STATUS_OVERTEMP) {
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over temp");
+						ImGui::SameLine();
+						ShowHelpMarker("Motor overheated: may be due to excessive runtime");
+						ImGui::NextColumn();
+					//	ImGui::Button("-- unimplemented --");
+				//		ImGui::NextColumn();
+					}
+					else if (statuses[i] == DRV_STATUS_OVERCURRENT_OVERTEMP) {
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over temp & current");
+						ImGui::SameLine();
+						ShowHelpMarker("Dual stall and overheat: is the suit on fire?");
+					//	ImGui::NextColumn();
+
+					//	ImGui::Button("-- unimplemented --");
+
+						ImGui::NextColumn();
+					}
+					else {
+						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Fatal error");
+						ImGui::SameLine();
+						ShowHelpMarker("This should not show up");
+					//	ImGui::NextColumn();
+
+					//	ImGui::Button("-- unimplemented --");
+
+						ImGui::NextColumn();
+					}
 				}
+
+				
 				ImGui::Columns(1);
 				ImGui::Separator();
-
+				ImGui::PushTextWrapPos(350.0f);
+				ImGui::Text("If any of the motors have failures, please email lucian@nullspacevr.com immediately");
+				ImGui::PopTextWrapPos();
+				if (ImGui::Button("Refresh Diagnostics")) {
+					NSVR_System_DumpDeviceDiagnostics(system);
+				}
 			}
 			ImGui::End();
 			#pragma endregion
@@ -450,7 +553,7 @@ int main(int, char**)
 					static NSVR_PlaybackHandle* variableStrengthHandle = nullptr;
 					if (variableStrengthHandle == nullptr) {
 						if (NSVR_FAILURE(NSVR_PlaybackHandle_Create(&variableStrengthHandle))) {
-							std::cout << "failed to make variablestrength handle\n";
+							std::cout << "failed to make variable strength handle\n";
 						}
 						else {
 							bindHumEvents(variableStrengthHandle, f1);
@@ -605,22 +708,103 @@ int main(int, char**)
 
 			ImGui::Begin("Hex Console");
 			{
-
+	
+				static char header[16] = {'2', '4', '0', '2'};
+				static char footer[16] = { 'F', 'F', 'F', 'F', '0', 'A' };
 				static char buf[64]; 
 				memset(buf, 0, 64);
+				static bool auto_headerfooter = true;
+
 
 				if (ImGui::InputText("", buf, 64, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_EnterReturnsTrue)) {
+					int actual_len = 0;
+
+					uint8_t intbuf[32] = { 0 };
 					
+					if (auto_headerfooter) {
+						int header_length = 0;
+						int footer_length = 0;
+						for (int i = 0; i < 16; i++) {
+							char headerChar = header[i];
+							if (headerChar == '\0') {
+								header_length = i;
+								break;
+							}
+						}
+						for (int i = 0; i < 16; i++) {
+							char footerChar = footer[i];
+							if (footerChar == '\0') {
+								footer_length = i;
+								break;
+							}
+						}
+
+						for (int i = 0; i < header_length; i+=2) {
+							intbuf[i / 2] = AsciiHexToByte(header[i], header[i + 1]);
+						}
+						
+						int header_byte_length = header_length / 2;
+						int footer_byte_length = footer_length / 2;
+						for (int i = 0; i < 64; i += 2) {
+							if (buf[i] == '\0') {
+
+								actual_len = int(i / 2);
+								break;
+							}
+							//stepping two at a time. We take two chars = 2 hex digits = 1 byte
+							char digit1 = buf[i];
+							char digit2 = buf[i + 1];
+
+							uint8_t byte = AsciiHexToByte(digit1, digit2);
+							std::cout << "Byte " << i << ": " << int(byte) << '\n';
+							intbuf[int(i / 2) + header_byte_length] = byte;
+
+						}
+
+						for (int i = 0; i < footer_length; i += 2) {
+							intbuf[(i / 2) + actual_len + header_byte_length] = AsciiHexToByte(footer[i], footer[i + 1]);
+						}
 					
+						actual_len += header_byte_length + footer_byte_length;
+
+					}
+					else {
+
+
+						for (int i = 0; i < 64; i += 2) {
+							if (buf[i] == '\0') {
+
+								actual_len = int(i / 2);
+								break;
+							}
+							//stepping two at a time. We take two chars = 2 hex digits = 1 byte
+							char digit1 = buf[i];
+							char digit2 = buf[i + 1];
+
+							uint8_t byte = AsciiHexToByte(digit1, digit2);
+							std::cout << "Byte " << i << ": " << int(byte) << '\n';
+							intbuf[int(i / 2)] = byte;
+
+						}
+					}
+					
+					NSVR_System_SubmitRawCommand(system, intbuf,actual_len);
 					memset(buf, 0, 64);
 
 				}
-
 				if (ImGui::IsItemHovered()) {
 					ImGui::SetKeyboardFocusHere(-1);
 				}
 
 
+				
+				ImGui::PushItemWidth(60);
+				ImGui::InputText("Header", header, 16, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+				ImGui::InputText("Footer", footer, 16, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+
+				ImGui::Checkbox("Use header and footer", &auto_headerfooter);
+
+				ImGui::PopItemWidth();
 			}
 			ImGui::End();
 #pragma endregion

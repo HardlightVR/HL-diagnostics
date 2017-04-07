@@ -14,6 +14,7 @@
 #else 
 	#define NSLOADER_INTERNAL_API
 #endif
+#define NSVR_RETURN_INTERNAL(ReturnType) NSLOADER_INTERNAL_API ReturnType __stdcall
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,7 @@ extern "C" {
 		uint8_t Filter;
 	} NSVR_AudioOptions;
 
-	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_PollLogs(NSVR_System* system, NSVR_LogEntry* entry);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_PollLogs(NSVR_System* system, NSVR_LogEntry* entry);
 
 	typedef struct NSVR_SystemStats_ {
 		unsigned int NumLiveEffects;
@@ -39,11 +40,15 @@ extern "C" {
 	} NSVR_SystemStats;
 	
 
-	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_GetStats(NSVR_System* system, NSVR_SystemStats* ptr);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_GetStats(NSVR_System* system, NSVR_SystemStats* ptr);
 
-	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_Audio_Enable(NSVR_System* system, NSVR_AudioOptions* optionsPtr);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_Audio_Enable(NSVR_System* system, NSVR_AudioOptions* optionsPtr);
 
-	NSLOADER_INTERNAL_API NSVR_Result __stdcall NSVR_System_Audio_Disable(NSVR_System* system);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_Audio_Disable(NSVR_System* system);
+
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_SubmitRawCommand(NSVR_System* system, uint8_t* buffer, int length);
+
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_DumpDeviceDiagnostics(NSVR_System* system);
 
 #ifdef __cplusplus
 }
