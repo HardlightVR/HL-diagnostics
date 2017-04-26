@@ -2,6 +2,7 @@
 // If you are new to ImGui, see examples/README.txt and documentation at the top of imgui.cpp.
 #include "stdafx.h"
 #include "GL\glew.h"
+#include <algorithm>
 
 #include "imgui.h"
 #include "imgui_impl_glfw_gl3.h"
@@ -179,30 +180,30 @@ inline uint8_t AsciiHexToByte(char digit1, char digit2)
 #define DRV_STATUS_OVERTEMP 3
 #define DRV_STATUS_OVERCURRENT_OVERTEMP 4
 
-void processDrvDiagnostics(std::string m, int* stats, const char** ids)
+void processDrvDiagnostics(std::string m,  const std::unordered_map<std::string, std::string>& zones, std::unordered_map<std::string, int>& statuses)
 {
 	int drv_id = 0;
 	int over_current = 0;
 	int over_temp = 0;
 	sscanf_s(m.c_str(), "[DriverMain] DRVDIAG %d,%d,%d",  &drv_id, &over_current, &over_temp);
 
-	for (int i = 0; i < 16; i++) {
-		//"0x19"
-		if (AsciiHexToByte(ids[i][2], ids[i][3]) == drv_id) {
+	for (const auto& pair : zones) {
+		if (AsciiHexToByte(pair.second[2], pair.second[3]) == drv_id) {
 			if (over_current && over_temp) {
-				stats[i] = DRV_STATUS_OVERCURRENT_OVERTEMP;
+				statuses[pair.first] = DRV_STATUS_OVERCURRENT_OVERTEMP;
 			}
 			else if (over_current) {
-				stats[i] = DRV_STATUS_OVERCURRENT;
+				statuses[pair.first] = DRV_STATUS_OVERCURRENT;
 			}
 			else if (over_temp) {
-				stats[i] = DRV_STATUS_OVERTEMP;
+				statuses[pair.first] = DRV_STATUS_OVERTEMP;
 			}
 			else {
-				stats[i] = DRV_STATUS_NOMINAL;
+				statuses[pair.first] = DRV_STATUS_NOMINAL;
 			}
 		}
 	}
+
 }
 
 int main(int, char**)
@@ -244,7 +245,7 @@ int main(int, char**)
 	static Log log;
 
 	const char* areas[16] = { "Forearm Left", "Forearm Right","Upper Arm Left", "Upper Arm Right",  "Shoulder Left", "Shoulder Right", "Upper Back Left", "Upper Back Right",  "Chest Left", "Chest Right", "Upper Ab Left", "Upper Ab Right", "Mid Ab Left", "Mid Ab Right", "Lower Ab Left", "Lower Ab Right"};
-	const char* ids[16] =   { "0x10"        , "0x18",         "0x16",           "0x1E",             "0x17",           "0x1F",          "0x11",            "0x19",               "0x15",      "0x1D",        "0x12",         "0x1A",            "0x13",       "0x1B",          "0x12",          "0x1A" };
+	//const char* ids[16] =   { "0x10"        , "0x18",         "0x16",           "0x1E",             "0x17",           "0x1F",          "0x11",            "0x19",               "0x15",      "0x1D",        "0x12",         "0x1A",            "0x13",       "0x1B",          "0x12",          "0x1A" };
 	int statuses[16] = { DRV_STATUS_UNKNOWN };
 
 	auto parseHexValue = [](const Json::Value& val) {
@@ -252,37 +253,20 @@ int main(int, char**)
 		return AsciiHexToByte(hexChars[0], hexChars[1]);
 	};
 
-	auto zones = nsvr::tools::json::parseDictFromDict<std::string, uint8_t>("Zones.json", [](auto val) { return val.asString(); }, parseHexValue);
+	auto zones = nsvr::tools::json::parseDictFromDict<std::string, std::string>("Zones.json", [](auto val) { return val.asString(); }, [](auto val) {return val.asString(); });
+	std::unordered_map<std::string, int> status_map;
+	for (const auto& kvp : zones) {
+		status_map[kvp.first] = DRV_STATUS_UNKNOWN;
+	}
 
+	auto padToAreaFlag = nsvr::tools::json::parseDictFromDict<std::string, AreaFlag>("PadToZone.json", [](auto val) {return val.asString(); }, [](auto val) {return AreaFlag(val.asInt()); });
 	// Main loop
 	QuaternionDisplay display_chest;
 	QuaternionDisplay display_leftUpperArm;
 	QuaternionDisplay display_rightUpperArm;
 
 	bool _suitConnected = false;
-	std::map<std::string, AreaFlag> padToAreaFlag = {
-		{ "B2L", AreaFlag::Back_Left },
-
-		{ "A1L", AreaFlag::Shoulder_Left },
-		{ "A2L", AreaFlag::Upper_Arm_Left },
-		{ "A3L", AreaFlag::Forearm_Left },
-		{ "A1R", AreaFlag::Shoulder_Right } ,
-		{ "A2R", AreaFlag::Upper_Arm_Right },
-		{ "A3R", AreaFlag::Forearm_Right },
-		{ "C1R", AreaFlag::Chest_Right },
-		{ "C2R", AreaFlag::Upper_Ab_Right },
-		{ "C3R", AreaFlag::Mid_Ab_Right },
-		{ "C4R", AreaFlag::Lower_Ab_Right },
-		{ "B2R", AreaFlag::Back_Right },
-
-		{ "C1L", AreaFlag::Chest_Left },
-		{ "C2L", AreaFlag::Upper_Ab_Left },
-		{ "C3L", AreaFlag::Mid_Ab_Left },
-		{ "C4L", AreaFlag::Lower_Ab_Left }
 	
-
-
-	};
 	
 
 	
@@ -335,8 +319,38 @@ int main(int, char**)
 
 	NSVR_PlaybackHandle* padByPadHandle = createHandle(padByPad);
 
+
+
+
     while (!glfwWindowShouldClose(window))
     {
+// #pragma region Window placement
+// 		ImGui::SetWindowPos("Status", ImVec2(15, 10));
+// 		ImGui::SetWindowSize("Status", ImVec2(241, 140));
+// 
+// 		ImGui::SetWindowPos("Stats", ImVec2(12, 159));
+// 		ImGui::SetWindowSize("Stats", ImVec2(243, 194));
+// 
+// 		ImGui::SetWindowPos("Modes", ImVec2(11, 361));
+// 		ImGui::SetWindowSize("Modes", ImVec2(246, 228));
+// 
+// 		ImGui::SetWindowPos("Tests", ImVec2(266, 10));
+// 		ImGui::SetWindowSize("Tests", ImVec2(457, 366));
+// 
+// 		ImGui::SetWindowPos("Communication", ImVec2(268, 387));
+// 		ImGui::SetWindowSize("Communication", ImVec2(455, 229));
+// 
+// 		ImGui::SetWindowPos("Tracking", ImVec2(733, 10));
+// 		ImGui::SetWindowSize("Tracking", ImVec2(493, 19));
+// 
+// 		ImGui::SetWindowPos("Motors", ImVec2(735, 42));
+// 		ImGui::SetWindowSize("Motors", ImVec2(466, 381));
+// 
+// 		ImGui::SetWindowPos("Hex", ImVec2(734, 430));
+// 		ImGui::SetWindowSize("Hex", ImVec2(248, 126));
+// #pragma endregion
+
+
 		using namespace std::chrono;
 		auto now = steady_clock::now();
 	//	memLeakChecker2(system);
@@ -355,8 +369,7 @@ int main(int, char**)
 	
 			NSVR_Result serviceConnected = NSVR_System_GetServiceInfo(system, nullptr);
 			NSVR_Result deviceConnected = NSVR_System_GetDeviceInfo(system, nullptr);
-
-
+			
 			ImGui::Begin("Status");
 			{
 				
@@ -402,7 +415,7 @@ int main(int, char**)
 			if (NSVR_System_PollLogs(system, &entry) == NSVR_Success_Unqualified) {
 				std::string m(entry.Message);
 				if (m.find("DRVDIAG") != std::string::npos) {
-					processDrvDiagnostics(m, statuses, ids);
+					processDrvDiagnostics(m, zones, status_map);
 				}
 				else {
 					m.append("\n");
@@ -425,63 +438,55 @@ int main(int, char**)
 			//	ImGui::Text("Operation"); ImGui::NextColumn();
 				ImGui::Separator();
 				for (int i = 0; i < 16; i++) {
-					//ImGui::NextColumn();
-					ImGui::Text(ids[i]); ImGui::NextColumn();
-					ImGui::Text(areas[i]); ImGui::NextColumn();
+					std::string areaReadableName = areas[i];
+					std::string areaKey = areaReadableName;
+					std::replace(areaKey.begin(), areaKey.end(), ' ', '_');
 
-					if (statuses[i] == DRV_STATUS_NOMINAL) {
+					ImGui::Text(areaKey.c_str()); ImGui::NextColumn();
+					ImGui::Text(areaReadableName.c_str()); ImGui::NextColumn();
+
+					int status = status_map[areaKey];
+					switch (status) {
+					case DRV_STATUS_NOMINAL:
 						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Nominal");
 						ImGui::SameLine();
 						ShowHelpMarker("The motor is functioning normally");
-						ImGui::NextColumn();
-					//	ImGui::Button("-- unimplemented --");
-			//			ImGui::NextColumn();
-					}
-					else if (statuses[i] == DRV_STATUS_UNKNOWN) {
+						break;
+
+					case  DRV_STATUS_UNKNOWN: 
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 1.0f, 1.0f), "Unknown");
 						ImGui::SameLine();
 						ShowHelpMarker("Refresh the diagnostics");
-						ImGui::NextColumn();
-					//	ImGui::Button("-- unimplemented --");
-				//		ImGui::NextColumn();
-					}
-					else if (statuses[i] == DRV_STATUS_OVERCURRENT){
+						break;
+
+					case DRV_STATUS_OVERCURRENT:
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over current");
 						ImGui::SameLine();
 						ShowHelpMarker("Motor stall: may be stuck or damaged");
-						ImGui::NextColumn();
-					//	ImGui::Button("-- unimplemented --");
-					//	ImGui::NextColumn();
-					}
-					else if (statuses[i] == DRV_STATUS_OVERTEMP) {
+						break;
+
+					case DRV_STATUS_OVERTEMP:
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over temp");
 						ImGui::SameLine();
 						ShowHelpMarker("Motor overheated: may be due to excessive runtime");
-						ImGui::NextColumn();
-					//	ImGui::Button("-- unimplemented --");
-				//		ImGui::NextColumn();
-					}
-					else if (statuses[i] == DRV_STATUS_OVERCURRENT_OVERTEMP) {
+						break;
+
+					case DRV_STATUS_OVERCURRENT_OVERTEMP:
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Over temp & current");
 						ImGui::SameLine();
 						ShowHelpMarker("Dual stall and overheat: is the suit on fire?");
-					//	ImGui::NextColumn();
+						break;
 
-					//	ImGui::Button("-- unimplemented --");
-
-						ImGui::NextColumn();
-					}
-					else {
+					default:
 						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Fatal error");
 						ImGui::SameLine();
 						ShowHelpMarker("This should not show up");
-					//	ImGui::NextColumn();
-
-					//	ImGui::Button("-- unimplemented --");
-
-						ImGui::NextColumn();
+						break;
 					}
+
+					ImGui::NextColumn();
 				}
+				
 
 				
 				ImGui::Columns(1);
