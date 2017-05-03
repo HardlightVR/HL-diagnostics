@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="NS_Unreal_SDK">
+      <UniqueIdentifier>{4D8460DB-B944-DC11-827F-258FEEFE20EE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NS_Unreal_SDK\src">
+      <UniqueIdentifier>{E4A08FE5-50B7-8D7B-992E-199D05845E03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NS_Unreal_SDK\src\Driver">
+      <UniqueIdentifier>{3FAB3787-2BD0-8607-541B-6C97409F8525}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NS_Unreal_SDK\src\Driver\Json">
+      <UniqueIdentifier>{48962C1A-B4AE-1344-7D5B-A3DDE932A8DD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\AreaFlags.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\LogWindow.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NSLoader.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NSLoader_Errors.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NSLoader_Internal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\NSLoader_fwds.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ShaderOps.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\imconfig.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\imgui.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\imgui_impl_glfw_gl3.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\imgui_internal.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stb_rect_pack.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stb_textedit.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stb_truetype.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\stdafx.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\targetver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\NS_Unreal_SDK\src\Driver\Json\jsoncpp.cpp">
+      <Filter>NS_Unreal_SDK\src\Driver\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\LogWindow.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui_draw.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui_impl_glfw_gl3.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\loadShader.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

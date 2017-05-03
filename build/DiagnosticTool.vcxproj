@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{281C86C9-14EA-79CF-FD7D-EAF5E9EA5534}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>DiagnosticTool</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>bin\Debug\Win32\</OutDir>
+    <IntDir>obj\Win32\Debug\</IntDir>
+    <TargetName>DiagnosticTool</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>bin\Release\Win32\</OutDir>
+    <IntDir>obj\Win32\Release\</IntDir>
+    <TargetName>DiagnosticTool</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>GLEW_STATIC;NOMINMAX;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\glew-2.0.0\include;D:\glfw-3.2.1\include;D:\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
+      <MinimalRebuild>false</MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>NSLoader.lib;glew32s.lib;glu32.lib;opengl32.lib;imm32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\GLFW\lib;D:\glew-2.0.0\lib\Release\Win32;D:\glfw-windows-build\Release;..\..\NSLoader\build\bin\Debug\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll bin\Debug\Win32 &gt; nul)
+IF EXIST ..\src\VertexShader.txt\ (xcopy /Q /E /Y /I ..\src\VertexShader.txt bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\VertexShader.txt bin\Debug\Win32 &gt; nul)
+IF EXIST ..\src\FragmentShader.txt\ (xcopy /Q /E /Y /I ..\src\FragmentShader.txt bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\FragmentShader.txt bin\Debug\Win32 &gt; nul)
+IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul)
+IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul)
+IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>GLEW_STATIC;NOMINMAX;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\glew-2.0.0\include;D:\glfw-3.2.1\include;D:\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>NSLoader.lib;glew32s.lib;glu32.lib;opengl32.lib;imm32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\GLFW\lib;D:\glew-2.0.0\lib\Release\Win32;D:\glfw-windows-build\Release;..\..\NSLoader\build\bin\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll bin\Release\Win32 &gt; nul)
+IF EXIST ..\src\VertexShader.txt\ (xcopy /Q /E /Y /I ..\src\VertexShader.txt bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\VertexShader.txt bin\Release\Win32 &gt; nul)
+IF EXIST ..\src\FragmentShader.txt\ (xcopy /Q /E /Y /I ..\src\FragmentShader.txt bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\FragmentShader.txt bin\Release\Win32 &gt; nul)
+IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul)
+IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul)
+IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\AreaFlags.h" />
+    <ClInclude Include="..\src\LogWindow.h" />
+    <ClInclude Include="..\src\NSLoader.h" />
+    <ClInclude Include="..\src\NSLoader_Errors.h" />
+    <ClInclude Include="..\src\NSLoader_Internal.h" />
+    <ClInclude Include="..\src\NSLoader_fwds.h" />
+    <ClInclude Include="..\src\ShaderOps.h" />
+    <ClInclude Include="..\src\imconfig.h" />
+    <ClInclude Include="..\src\imgui.h" />
+    <ClInclude Include="..\src\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="..\src\imgui_internal.h" />
+    <ClInclude Include="..\src\stb_rect_pack.h" />
+    <ClInclude Include="..\src\stb_textedit.h" />
+    <ClInclude Include="..\src\stb_truetype.h" />
+    <ClInclude Include="..\src\stdafx.h" />
+    <ClInclude Include="..\src\targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\NS_Unreal_SDK\src\Driver\Json\jsoncpp.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\LogWindow.cpp" />
+    <ClCompile Include="..\src\imgui.cpp" />
+    <ClCompile Include="..\src\imgui_draw.cpp" />
+    <ClCompile Include="..\src\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="..\src\loadShader.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
