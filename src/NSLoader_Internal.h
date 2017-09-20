@@ -4,7 +4,6 @@
 #include "NSLoader_fwds.h"
 
 #define INTERNAL_TOOL
-
 #ifdef INTERNAL_TOOL
 	#ifdef NSLOADER_EXPORTS
 	#define NSLOADER_INTERNAL_API __declspec(dllexport) 
@@ -14,7 +13,7 @@
 #else 
 	#define NSLOADER_INTERNAL_API
 #endif
-#define NSVR_RETURN_INTERNAL(ReturnType) NSLOADER_INTERNAL_API ReturnType __stdcall
+#define NSVR_RETURN_INTERNAL(ReturnType) NSLOADER_INTERNAL_API ReturnType __cdecl
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,6 +49,31 @@ extern "C" {
 
 	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_System_DumpDeviceDiagnostics(NSVR_System* system);
 
+
+	/* Immediate API */
+	typedef struct NSVR_BodyView NSVR_BodyView;
+
+
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_Immediate_Set(NSVR_System* systemPtr, uint32_t* regions, double* amplitudes, uint32_t length);
+
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_Create(NSVR_BodyView** body);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_Release(NSVR_BodyView** body);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_Poll(NSVR_BodyView* body, NSVR_System* system);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_GetNodeCount(NSVR_BodyView* body, uint32_t* outNodeCount);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_GetNodeType(NSVR_BodyView * body, uint32_t nodeIndex, uint32_t* outType);
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_GetNodeRegion(NSVR_BodyView * body, uint32_t nodeIndex, uint32_t* outRegion);
+
+	//only valid if nodeType == intensity
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_GetIntensity(NSVR_BodyView * body, uint32_t nodeIndex, float* outIntensity);
+
+	typedef struct NSVR_Color {
+		float r;
+		float g;
+		float b;
+		float a;
+	} NSVR_Color;
+	//only valid if nodeType == color
+	NSVR_RETURN_INTERNAL(NSVR_Result) NSVR_BodyView_GetColor(NSVR_BodyView * body, uint32_t nodeIndex, NSVR_Color* outColor);
 #ifdef __cplusplus
 }
 #endif

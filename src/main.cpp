@@ -33,6 +33,9 @@ unsigned char hex2byte(char digit)
 	return hexDigit >= 'A' ? hexDigit - 'A' + 10 : hexDigit - '0';
 }
 
+const char* CONCEPT_TO_STRING[] = { "Unknown", "Suit", "Controller", "Headware", "Gun", "Sword" };
+
+
 static void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error %d: %s\n", error, description);
@@ -59,21 +62,21 @@ static void ShowHelpMarker(const char* desc)
 	}
 }
 
-NSVR_Event* createEvent(float time, float duration, float strength, int area, int effect) {
+NSVR_Event* createEvent(float time, float duration, float strength, uint32_t area, int effect) {
 	NSVR_Event* event = nullptr;
 	NSVR_Event_Create(&event, NSVR_EventType::NSVR_EventType_BasicHapticEvent);
 	NSVR_Event_SetFloat(event, "duration",duration);
 	NSVR_Event_SetFloat(event, "strength", strength);
-	NSVR_Event_SetInteger(event, "area", area);
-	NSVR_Event_SetInteger(event, "effect", effect); 
+	NSVR_Event_SetUInt32s(event, "area", &area, 1);
+	NSVR_Event_SetInt(event, "effect", effect); 
 	NSVR_Event_SetFloat(event, "time", time);
 	return event;
 }
 
-NSVR_PlaybackHandle* createHandle(NSVR_Timeline* timeline) {
+NSVR_PlaybackHandle* createHandle(NSVR_Timeline* timeline, NSVR_System* system) {
 	NSVR_PlaybackHandle* handle = nullptr;
 	NSVR_PlaybackHandle_Create(&handle);
-	NSVR_Result result = NSVR_Timeline_Transmit(timeline, handle);
+	NSVR_Result result = NSVR_Timeline_Transmit(timeline,system, handle);
 	//NSVR_Result result = NSVR_PlaybackHandle_Bind(handle, timeline);
 	
 	if (NSVR_FAILURE(result)) {
@@ -85,13 +88,13 @@ void makeBuzz(NSVR_System* system, uint32_t area) {
 
 	//create a timeline
 	NSVR_Timeline* timeline = nullptr;
-	NSVR_Timeline_Create(&timeline, system);
+	NSVR_Timeline_Create(&timeline);
 	//add a buzz to the timeline
 	NSVR_Event* buzz = createEvent(0.0f, 0.3f, 1.0f, area, 666);
 	NSVR_Timeline_AddEvent(timeline, buzz);
 
 	//create a handle from the timeline
-	NSVR_PlaybackHandle* handle = createHandle(timeline);
+	NSVR_PlaybackHandle* handle = createHandle(timeline, system);
 
 	//play & release
 	NSVR_PlaybackHandle_Command(handle, NSVR_PlaybackCommand::NSVR_PlaybackCommand_Play);
@@ -114,7 +117,7 @@ public:
 	}
 	ValueGraph(std::string name) :_name(name) {};
 	~ValueGraph() {
-		std::fill(values, values + NUM_SAMPLES, 0);
+		std::fill(values, values + NUM_SAMPLES, 0.0f);
 	}
 	void AddValue(float f) {
 		
@@ -149,25 +152,6 @@ private:
 	ValueGraph _wGraph;
 };
 
-void memLeakChecker(NSVR_System* system) {
-	NSVR_Timeline* timeline = nullptr;
-	NSVR_Timeline_Create(&timeline, system);
-
-	for (int i = 0; i < 1000; i++) {
-		NSVR_Event* event = createEvent(0, 0, 0, 0, NSVR_Effect::NSVR_Effect_Bump);
-		NSVR_Timeline_AddEvent(timeline, event);
-		NSVR_Event_Release(&event);
-	}
-
-	NSVR_Timeline_Release(&timeline);
-}
-
-
-void memLeakChecker2(NSVR_System* system) {
-	for (int i = 0; i < 10; i++) {
-		memLeakChecker(system);
-	}
-}
 
 inline uint8_t AsciiHexToByte(char digit1, char digit2)
 {
@@ -215,7 +199,7 @@ int main(int, char**)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	//if we use 3.3, we need to use shaders to render anything..
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Hardlight Diagnostics", NULL, NULL);
 	glfwMakeContextCurrent(window);
@@ -273,26 +257,27 @@ int main(int, char**)
 	//Let's build the test effect. We'll iterate through all the pads, and then create an event for each.
 	
 	std::vector<std::string> pads = { "B2R", "A1R", "C1R", "C2R", "C1L", "C2L", "B2L", "A1L" , "A2R", "A3R", "C3R", "C4R", "C3L", "C4L", "A2L", "A3L"};
-	std::vector<AreaFlag> order = {
-		AreaFlag::Forearm_Left,
-		AreaFlag::Upper_Arm_Left,
-		AreaFlag::Shoulder_Left,
-		AreaFlag::Back_Left,
 
-		AreaFlag::Chest_Left,
-		AreaFlag::Upper_Ab_Left,
-		AreaFlag::Mid_Ab_Left,
-		AreaFlag::Lower_Ab_Left,
+	std::vector<uint32_t> order = {
+		nsvr_region_lower_arm_left,
+		nsvr_region_upper_arm_left,
+		nsvr_region_shoulder_left,
+		nsvr_region_upper_back_left,
 
-		AreaFlag::Lower_Ab_Right,
-		AreaFlag::Mid_Ab_Right,
-		AreaFlag::Upper_Ab_Right,
-		AreaFlag::Chest_Right,
+		nsvr_region_chest_left,
+		nsvr_region_upper_ab_left,
+		nsvr_region_middle_ab_left,
+		nsvr_region_lower_ab_left,
 
-		AreaFlag::Back_Right,
-		AreaFlag::Shoulder_Right,
-		AreaFlag::Upper_Arm_Right,
-		AreaFlag::Forearm_Right
+		nsvr_region_lower_ab_right,
+		nsvr_region_middle_ab_right,
+		nsvr_region_upper_ab_right,
+		nsvr_region_chest_right,
+
+		nsvr_region_upper_back_right,
+		nsvr_region_shoulder_right,
+		nsvr_region_upper_arm_right,
+		nsvr_region_lower_arm_right
 
 	};
 	//Instantiate the plugin
@@ -308,16 +293,16 @@ int main(int, char**)
 	
 
 	NSVR_Timeline* padByPad = nullptr;
-	NSVR_Timeline_Create(&padByPad, system);
+	NSVR_Timeline_Create(&padByPad);
 	float offset = 0.0f;
 	for (const auto& area : order) {
-		NSVR_Event* myEvent = createEvent(offset, 0.7f, 1.0f, (int)area, 666);
+		NSVR_Event* myEvent = createEvent(offset, 0.7f, 1.0f, (int)area, 3);
 		NSVR_Timeline_AddEvent(padByPad, myEvent);
 		NSVR_Event_Release(&myEvent);
 		offset += 1.0f;
 	}
 
-	NSVR_PlaybackHandle* padByPadHandle = createHandle(padByPad);
+	NSVR_PlaybackHandle* padByPadHandle = createHandle(padByPad, system);
 
 
 
@@ -352,11 +337,7 @@ int main(int, char**)
 
 
 		using namespace std::chrono;
-		auto now = steady_clock::now();
-	//	memLeakChecker2(system);
-		auto future = duration_cast<microseconds>(steady_clock::now() - now);
-		//std::cout << "Time (micro): " << future.count() << '\n';
-
+	
         glfwPollEvents();
        
 		ImGui_ImplGlfwGL3_NewFrame();
@@ -367,46 +348,60 @@ int main(int, char**)
 
 			
 	
-			NSVR_Result serviceConnected = NSVR_System_GetServiceInfo(system, nullptr);
-			NSVR_Result deviceConnected = NSVR_System_GetDeviceInfo(system, nullptr);
-			
+			bool serviceConnected = NSVR_SUCCESS(NSVR_System_GetServiceInfo(system, nullptr));
+			NSVR_Result deviceConnected = false;
 			ImGui::Begin("Status");
 			{
 				
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-				ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
-				ImGui::Text("Service connection status"); ImGui::SameLine();
-				ShowHelpMarker("The NullSpace VR Runtime Service must be running to use the suit. Check for the small NullSpace icon in the task bar, and make sure that it is green. If it is not green, right click it and hit 'Enable Suit'. ");
-				if (NSVR_SUCCESS(serviceConnected)) {
-					ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
+					ImGui::BeginChild("EngineStatus", ImVec2(0, 50), true);
+						ImGui::Text("Service connection status"); ImGui::SameLine();
+						ShowHelpMarker("The NullSpace VR Runtime Service must be running to use the suit. Check for the small NullSpace icon in the task bar, and make sure that it is green. If it is not green, right click it and hit 'Enable Suit'. ");
+						if (serviceConnected) {
+							ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Connected");
+						}
+						else {
+							ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Disconnected");
 
-				}
-				else {
-					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Disconnected");
+						}
+					ImGui::EndChild();
+				ImGui::PopStyleVar();
+				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+					ImGui::BeginChild("KnownDevices", ImVec2(0, 150), true);
+						ImGui::Text("Known Devices");
+						if (serviceConnected) {
+							NSVR_DeviceInfo_Iter iter;
+							NSVR_DeviceInfo_Iter_Init(&iter);
+	
+							while (NSVR_DeviceInfo_Iter_Next(&iter, system)) {
+								ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
+								if (iter.DeviceInfo.Status == NSVR_DeviceStatus_Connected) {
+									ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+								}
+								else {
+									ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
 
-				}
-				ImGui::EndChild();
+								}
+								ImGui::BeginChild("KnownDevices", ImVec2(0, 42), true, ImGuiWindowFlags_ShowBorders);
+								ImGui::Text(iter.DeviceInfo.Name); ImGui::SameLine();
+								
+								std::string id("[id: " + std::to_string(iter.DeviceInfo.Id) + "]");
+								ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6, 1.0f), id.c_str());
+							
+								ImGui::TextColored(ImVec4(0.8f, 0.0f, 1.0f, 1.0f), CONCEPT_TO_STRING[iter.DeviceInfo.Concept]);
+								ImGui::EndChild();
+								ImGui::PopStyleColor();
+								ImGui::PopStyleVar();
+							}
+						}
+						else {
+							ImGui::TextColored(ImVec4(0.4f, 0.4f, 0.4f, 1.0f), "Waiting for service..");
+						}
+					ImGui::EndChild();
 				ImGui::PopStyleVar();
 				
 			}
-			{
-				if (NSVR_SUCCESS(serviceConnected)) {
-					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-					ImGui::BeginChild("SuitStatus", ImVec2(0, 50), true);
-					ImGui::Text("Suit status");
-					if (NSVR_SUCCESS(deviceConnected)) {
-						_suitConnected = true;
-						ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Plugged in");
-					}
-					else {
-						_suitConnected = false;
-						ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Unplugged");
-					}
-					ImGui::EndChild();
-					ImGui::PopStyleVar();
-				}
 			
-			}
 			ImGui::End();
 			#pragma endregion
 
@@ -536,61 +531,22 @@ int main(int, char**)
 					ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
 					ImGui::BeginChild("FullPower", ImVec2(0, 70), true);
 					ImGui::Text("Activate entire suit at specified power."); ImGui::NewLine();
-					static float f1 = 1.0f;
+					static float f1 = 0.0f;
 					static bool _isEffectPlaying;
-					bool wasSliderMoved = ImGui::SliderFloat("", &f1, 0.0f, 1.0f, "strength = %.1f");
+					bool wasSliderMoved = ImGui::SliderFloat("", &f1, 0.0f, 1.0f, "strength = %.3f");
 
-					
-					auto bindHumEvents = [&system](NSVR_PlaybackHandle* handle, float strength) {
-						NSVR_Timeline* timeline = nullptr;
-						NSVR_Timeline_Create(&timeline, system);
-						NSVR_Event* event = createEvent(0.0, 9999999.0f, strength, (int)AreaFlag::All_Areas, NSVR_Effect_Hum);
-						NSVR_Timeline_AddEvent(timeline, event);
+					std::vector<double> strengths(16, f1);
 
-						NSVR_Timeline_Transmit(timeline, handle);
-					//	NSVR_PlaybackHandle_Bind(handle, timeline);
-
-
-						NSVR_Timeline_Release(&timeline);
-						NSVR_Event_Release(&event);
-
-					};
-					static NSVR_PlaybackHandle* variableStrengthHandle = nullptr;
-					if (variableStrengthHandle == nullptr) {
-						if (NSVR_FAILURE(NSVR_PlaybackHandle_Create(&variableStrengthHandle))) {
-							std::cout << "failed to make variable strength handle\n";
-						}
-						else {
-							bindHumEvents(variableStrengthHandle, f1);
-
-						}
-					}
-
-					
-					//copy
-
-					ImGui::SameLine(); 
+					uint32_t* areas = (uint32_t*)order.data();
 					if (wasSliderMoved) {
-					{
-							NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Reset);
-
-							bindHumEvents(variableStrengthHandle, f1);
-
-							if (_isEffectPlaying) {
-								NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Play);
-
-							}
+						NSVR_Immediate_Set(system, areas, strengths.data(), strengths.size());
 					}
 					
-					
-					}
 					if (ImGui::Button("Start")) {
-						NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Play);
 						_isEffectPlaying = true;
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Stop")) {
-						NSVR_PlaybackHandle_Command(variableStrengthHandle, NSVR_PlaybackCommand_Reset);
 						_isEffectPlaying = false;
 					}
 
@@ -605,7 +561,7 @@ int main(int, char**)
 					ImGui::NewLine();
 					ImGui::Columns(4);
 					
-					for (int i = 0; i < pads.size(); i++)
+					for (std::size_t i = 0; i < pads.size(); i++)
 					{
 						if (i % 2 == 0 && i != 0) {
 							ImGui::NextColumn();
@@ -627,44 +583,7 @@ int main(int, char**)
 			}
 			ImGui::End();
 			#pragma endregion
-#pragma region Stats
-			static float liveEffects[32] = { 0 };
-			static float orphanedEffects[32] = { 0 };
 
-			ImGui::Begin("Stats");
-			{
-				NSVR_SystemStats stat = { 0 };
-				NSVR_System_GetStats(system, &stat);
-				ImGui::Text("Live effects");
-
-				for (int i = 0; i < 31; i++) {
-					if (i == 0) {
-						continue;
-					}
-					liveEffects[i] = liveEffects[i + 1];
-
-				}
-				liveEffects[31] = stat.NumLiveEffects;
-
-				ImGui::PlotHistogram("", liveEffects, 32, 0, NULL, 0.0f, 10.0f, ImVec2(0, 60));
-
-
-
-				ImGui::Text("Orphaned effects");
-		
-				for (int i = 0; i <31; i++) {
-					if (i == 0) {
-						continue;
-					}
-					orphanedEffects[i] = orphanedEffects[i + 1];
-
-				}
-				orphanedEffects[31] = stat.NumOrphanedEffects;
-
-				ImGui::PlotHistogram("", orphanedEffects, 32, 0, NULL, 0.0f, 10.0f, ImVec2(0, 60));
-			}
-			ImGui::End();
-#pragma endregion
 
 
 #pragma region Modes

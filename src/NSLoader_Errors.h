@@ -16,13 +16,13 @@ typedef int32_t NSVR_Result;
 
 
 
-typedef struct NSVR_ErrorInfo_ {
+typedef struct NSVR_ErrorInfo {
 	NSVR_Result LastResult;
 	char ErrorString[512];
 } NSVR_ErrorInfo;
 
 
-typedef enum NSVR_SuccessTypes_ {
+typedef enum NSVR_SuccessTypes {
 	NSVR_Success_Unqualified = 0,
 	
 	/* Polling data */
@@ -31,13 +31,14 @@ typedef enum NSVR_SuccessTypes_ {
 	
 } NSVR_SuccessTypes;
 
-typedef enum NSVR_ErrorTypes_ {
+typedef enum NSVR_ErrorTypes {
 
 
 	/* General errors*/
 	NSVR_Error_Unknown = -1000,
 	NSVR_Error_NullArgument = -1001,
 	NSVR_Error_InvalidArgument = -1002,
+
 	
 	/* Creation errors */
 	NSVR_Error_InvalidEventType = -2000,
@@ -47,6 +48,9 @@ typedef enum NSVR_ErrorTypes_ {
 
 	/* Service errors*/
 	NSVR_Error_ServiceDisconnected = -4000,
+
+	/* Handle errors */
+	NSVR_Error_NoSuchHandle = -5000,
 
 
 
