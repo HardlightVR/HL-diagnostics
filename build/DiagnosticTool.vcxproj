@@ -58,22 +58,20 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>GLEW_STATIC;NOMINMAX;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\glew-2.0.0\include;D:\glfw-3.2.1\include;D:\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>NSLoader.lib;glew32s.lib;glu32.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\GLFW\lib;D:\glew-2.0.0\lib\Release\Win32;..\..\NSLoader\build\bin\Debug\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>NSLoader.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\NSLoader\build\bin\Debug\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Debug\Win32\NSLoader.dll bin\Debug\Win32 &gt; nul)
-IF EXIST ..\src\VertexShader.txt\ (xcopy /Q /E /Y /I ..\src\VertexShader.txt bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\VertexShader.txt bin\Debug\Win32 &gt; nul)
-IF EXIST ..\src\FragmentShader.txt\ (xcopy /Q /E /Y /I ..\src\FragmentShader.txt bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\FragmentShader.txt bin\Debug\Win32 &gt; nul)
 IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul)
 IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul)
 IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul)</Command>
@@ -84,28 +82,25 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Debug\Win32 &
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>GLEW_STATIC;NOMINMAX;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\glew-2.0.0\include;D:\glfw-3.2.1\include;D:\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NOMINMAX;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>NSLoader.lib;glew32s.lib;glu32.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\GLFW\lib;D:\glew-2.0.0\lib\Release\Win32;..\..\NSLoader\build\bin\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Hardlight.lib;d3d9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\NSLoader\build\bin\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
       <Command>IF EXIST ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Release\Win32\NSLoader.dll bin\Release\Win32 &gt; nul)
-IF EXIST ..\src\VertexShader.txt\ (xcopy /Q /E /Y /I ..\src\VertexShader.txt bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\VertexShader.txt bin\Release\Win32 &gt; nul)
-IF EXIST ..\src\FragmentShader.txt\ (xcopy /Q /E /Y /I ..\src\FragmentShader.txt bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\FragmentShader.txt bin\Release\Win32 &gt; nul)
 IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul)
 IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul)
 IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul)</Command>
@@ -118,10 +113,9 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32
     <ClInclude Include="..\src\NSLoader_Errors.h" />
     <ClInclude Include="..\src\NSLoader_Internal.h" />
     <ClInclude Include="..\src\NSLoader_fwds.h" />
-    <ClInclude Include="..\src\ShaderOps.h" />
     <ClInclude Include="..\src\imconfig.h" />
     <ClInclude Include="..\src\imgui.h" />
-    <ClInclude Include="..\src\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="..\src\imgui_impl_dx9.h" />
     <ClInclude Include="..\src\imgui_internal.h" />
     <ClInclude Include="..\src\stb_rect_pack.h" />
     <ClInclude Include="..\src\stb_textedit.h" />
@@ -137,8 +131,7 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32
     <ClCompile Include="..\src\LogWindow.cpp" />
     <ClCompile Include="..\src\imgui.cpp" />
     <ClCompile Include="..\src\imgui_draw.cpp" />
-    <ClCompile Include="..\src\imgui_impl_glfw_gl3.cpp" />
-    <ClCompile Include="..\src\loadShader.cpp" />
+    <ClCompile Include="..\src\imgui_impl_dx9.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
