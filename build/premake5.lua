@@ -65,7 +65,7 @@ project "DiagnosticTool"
 			glew_win32_dir,
 			glfw_win32_dir2
 		}	
-		links {"NSLoader.lib", "d3d9.lib"}
+		links {"Hardlight.lib", "d3d11.lib", "d3dcompiler.lib"}
 	
 
 
@@ -75,7 +75,7 @@ project "DiagnosticTool"
 		}
 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Debug/Win32/NSLoader.dll %{cfg.targetdir}",
+			"{COPY} ../../NSLoader/build/bin/Debug/Win32/Hardlight.dll %{cfg.targetdir}",
 		
 			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
 			"{COPY} ../src/Zones.json %{cfg.targetdir}",
@@ -95,7 +95,7 @@ project "DiagnosticTool"
 		defines {"NDEBUG"}
 		optimize "On" 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Release/Win32/NSLoader.dll %{cfg.targetdir}",
+			"{COPY} ../../NSLoader/build/bin/Release/Win32/Hardlight.dll %{cfg.targetdir}",
 		
 			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
 			"{COPY} ../src/Zones.json %{cfg.targetdir}",
