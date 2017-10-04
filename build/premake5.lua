@@ -18,13 +18,15 @@ project "DiagnosticTool"
 	-- dependencies
 
 	json_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver/Json"
-	
+	boost_incl_dir = "D:/Libraries/boost/boost_1_61_0"
+
+	hardlight_driver_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver"
+	hardlight_driver_lib_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
+
 	includedirs {
-	--	protobuf_incl_dir,
-	--	boost_incl_dir,
-	--	protobuf_def_incl_dir
 	json_include_dir,
-	
+	boost_incl_dir,
+	hardlight_driver_include_dir
 	}
 
 	flags {
@@ -45,6 +47,9 @@ project "DiagnosticTool"
 	
 
 
+	boost_win32_dir = "D:/Libraries/boost/boost_1_61_0/stage/win32/lib"
+	boost_win64_dir = "D:/Libraries/boost/boost_1_61_0/stage/x64/lib"
+
 
 	nullspace_win32_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/build/bin"
 	
@@ -52,7 +57,7 @@ project "DiagnosticTool"
 	pchsource "../src/stdafx.cpp"
 
 	
-	defines { "NOMINMAX"}
+	defines { "NOMINMAX", "BOOST_THREAD_USE_LIB"}
 	
 	filter {"files:**jsoncpp.cpp"}
 		flags {'NoPCH'}
@@ -61,11 +66,10 @@ project "DiagnosticTool"
 	-- input: libprotobuf
 	filter {"platforms:Win32"}
 		libdirs {
-			glfw_win32_dir,
-			glew_win32_dir,
-			glfw_win32_dir2
+			boost_win32_dir,
+			hardlight_driver_lib_dir
 		}	
-		links {"Hardlight.lib", "d3d11.lib", "d3dcompiler.lib"}
+		links {"HardlightPlatform.lib", "d3d11.lib", "d3dcompiler.lib"}
 	
 
 
