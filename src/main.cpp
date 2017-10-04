@@ -3,45 +3,20 @@
 #include "stdafx.h"
 
 #include <algorithm>
-
-#include "imgui.h"
-#include "imgui_impl_dx11.h"
 #include <stdio.h>
-#include <vector>
 #include <d3d11.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
-#include "LogWindow.h"
-
-#include <unordered_map>
-#include <map>
-#include <chrono>
-
-#include "NSLoader.h"
-#include "NSLoader_Internal.h"
-#include <iostream>
-#include "AreaFlags.h"
-#include <thread>
+#include <vector>
 #include <sstream>
-#include <boost/dll.hpp>
 
+
+#include "imgui.h"
+#include "imgui_impl_dx11.h"
 #include "NSDriverApi.h"
-#include "JsonKeyValueConfig.h"
+#include "PlatformWindow.h"
 
 
-template<class TFunc>
-bool tryLoad(std::unique_ptr<boost::dll::shared_library>& lib, const std::string& symbol, std::function<TFunc>& result) {
-	try {
-		result = lib->get<TFunc>(symbol);
-		return result ? true : false; //This looks dumb. But I did it because result wasn't being implicitly converted to bool
-									  //it still looks dumb. 
-									  //return (bool)result;
-	}
-	catch (const boost::system::system_error&) {
-		return false;
-	}
-
-}
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -142,50 +117,26 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	}
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-using namespace nsvr;
 
 
-
-
-static void ShowHelpMarker(const char* desc)
-{
-	ImGui::TextDisabled("(?)");
-	if (ImGui::IsItemHovered())
+void ShowDriverInformation() {
+	ImGui::Begin("Platform Info");
 	{
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(450.0f);
-		ImGui::TextUnformatted(desc);
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
-	}
-}
-
-
-
-void driverInformation() {
-	ImGui::Begin("Driver Info");
-	{
-		ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-		
-		ImGui::BeginChild("Driver Info", ImVec2(0, 0), true);
-
 		std::stringstream s;
-		auto version = NSVR_Driver_GetVersion();
+		auto version = hvr_platform_getversion();
 		s << "HardlightPlatform.dll version " << (version >> 16) << "." << ((version << 16) >> 16);
 		ImGui::Text(s.str().c_str());
-		ImGui::EndChild();
-		ImGui::PopStyleVar();
-		
 	}
 	ImGui::End();
 }
+
 int main(int, char**)
 {
 	
 	// Create application window
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, LoadCursor(NULL, IDC_ARROW), NULL, NULL, _T("ImGui Example"), NULL };
 	RegisterClassEx(&wc);
-	HWND hwnd = CreateWindow(_T("ImGui Example"), _T("ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+	HWND hwnd = CreateWindow(_T("ImGui Example"), _T("Hardlight Platform Diagnostics"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
 	// Initialize Direct3D
 	if (CreateDeviceD3D(hwnd) < 0)
@@ -203,38 +154,26 @@ int main(int, char**)
 	ImGui_ImplDX11_Init(hwnd, g_pd3dDevice, g_pd3dDeviceContext);
 
 
-
-	bool show_test_window = true;
-	bool show_another_window = false;
 	ImVec4 clear_color = ImColor(114, 144, 154);
 
-	static bool show_app_log = true;
-	static Log log;
+	
+	
+	assert(hvr_platform_isdllcompatible());
 
-	
-	
-	NSVR_Diagnostics_Menu menu;
-	menu.keyval = [](const char* key, const char* val) {
-		ImGui::Text("%s: %s", key, val);
-	};
-	menu.button = [](const char* label) {
-		return ImGui::Button(label);
-	};
-	NSVR_Driver_Context_t* context = NSVR_Driver_Create();
-	NSVR_Driver_SetupDiagnostics(context, &menu);
-	NSVR_Driver_StartThread(context);
+	hvr_platform* context;
+	hvr_platform_create(&context);
+	hvr_platform_startup(context);
+
+
 	// Main loop
 	MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
 	
-
+	PlatformWindow platformWindow(context);
 
 
     while (msg.message != WM_QUIT)
     {
-
-
-		using namespace std::chrono;
 	
 		if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
 		{
@@ -244,29 +183,12 @@ int main(int, char**)
 		}
 		ImGui_ImplDX11_NewFrame();
 
-	
-		driverInformation();
-	
+		ImGui::ShowTestWindow();
+
+		ShowDriverInformation();
+
+		platformWindow.Render();
 		
-
-
-		#pragma region Motor Tests
-		ImGui::Begin("Tests");
-		{
-			{
-
-				ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-				ImGui::BeginChild("Plugin 1", ImVec2(0, 0), true);
-
-				NSVR_Driver_DrawDiagnostics(context);
-
-				ImGui::EndChild();
-				ImGui::PopStyleVar();
-			}
-		}
-		ImGui::End();
-		
-	
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);
 		ImGui::Render();
 
@@ -274,8 +196,9 @@ int main(int, char**)
 
 		
     }
-	NSVR_Driver_Shutdown(context);
-	NSVR_Driver_Destroy(context);
+
+	hvr_platform_shutdown(context);
+	hvr_platform_destroy(&context);
 
 	ImGui_ImplDX11_Shutdown();
 

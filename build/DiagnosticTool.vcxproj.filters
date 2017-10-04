@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="NS_Unreal_SDK">
@@ -63,6 +63,8 @@
     <ClInclude Include="..\src\targetver.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\DllUtils.h" />
+    <ClInclude Include="..\src\PlatformWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\NS_Unreal_SDK\src\Driver\Json\jsoncpp.cpp">
@@ -72,6 +74,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\imgui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui_demo.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\imgui_draw.cpp">
@@ -86,5 +91,6 @@
     <ClCompile Include="..\src\stdafx.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\PlatformWindow.cpp" />
   </ItemGroup>
 </Project>

@@ -52,7 +52,7 @@ project "DiagnosticTool"
 
 
 	nullspace_win32_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/build/bin"
-	
+	platform_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
 	pchheader "stdafx.h"
 	pchsource "../src/stdafx.cpp"
 
@@ -79,11 +79,9 @@ project "DiagnosticTool"
 		}
 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Debug/Win32/Hardlight.dll %{cfg.targetdir}",
+			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
 		
-			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
-			"{COPY} ../src/Zones.json %{cfg.targetdir}",
-			"{COPY} ../src/imgui.ini %{cfg.targetdir}"
+		--	"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 
 
 
@@ -99,11 +97,10 @@ project "DiagnosticTool"
 		defines {"NDEBUG"}
 		optimize "On" 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Release/Win32/Hardlight.dll %{cfg.targetdir}",
+			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
 		
-			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
-			"{COPY} ../src/Zones.json %{cfg.targetdir}",
-			"{COPY} ../src/imgui.ini %{cfg.targetdir}"
+		
+			--"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 
 		}
 

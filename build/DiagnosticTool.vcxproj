@@ -71,10 +71,7 @@
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul)
-IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Debug\Win32 &gt; nul)
-IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Debug\Win32 &gt; nul)
-IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Debug\Win32 &gt; nul)</Command>
+      <Command>IF EXIST ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll\ (xcopy /Q /E /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -100,14 +97,12 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Debug\Win32 &
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll bin\Release\Win32 &gt; nul)
-IF EXIST ..\src\PadToZone.json\ (xcopy /Q /E /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\PadToZone.json bin\Release\Win32 &gt; nul)
-IF EXIST ..\src\Zones.json\ (xcopy /Q /E /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\Zones.json bin\Release\Win32 &gt; nul)
-IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\src\imgui.ini bin\Release\Win32 &gt; nul)</Command>
+      <Command>IF EXIST ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll\ (xcopy /Q /E /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Release\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Release\Win32 &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\src\AreaFlags.h" />
+    <ClInclude Include="..\src\DllUtils.h" />
     <ClInclude Include="..\src\LogWindow.h" />
     <ClInclude Include="..\src\NSLoader.h" />
     <ClInclude Include="..\src\NSLoader_Errors.h" />
@@ -117,6 +112,7 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32
     <ClInclude Include="..\src\imgui.h" />
     <ClInclude Include="..\src\imgui_impl_dx11.h" />
     <ClInclude Include="..\src\imgui_internal.h" />
+    <ClInclude Include="..\src\PlatformWindow.h" />
     <ClInclude Include="..\src\stb_rect_pack.h" />
     <ClInclude Include="..\src\stb_textedit.h" />
     <ClInclude Include="..\src\stb_truetype.h" />
@@ -130,9 +126,11 @@ IF EXIST ..\src\imgui.ini\ (xcopy /Q /E /Y /I ..\src\imgui.ini bin\Release\Win32
     </ClCompile>
     <ClCompile Include="..\src\LogWindow.cpp" />
     <ClCompile Include="..\src\imgui.cpp" />
+    <ClCompile Include="..\src\imgui_demo.cpp" />
     <ClCompile Include="..\src\imgui_draw.cpp" />
     <ClCompile Include="..\src\imgui_impl_dx11.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\PlatformWindow.cpp" />
     <ClCompile Include="..\src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
