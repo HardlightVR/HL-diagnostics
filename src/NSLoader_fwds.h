@@ -31,3 +31,5 @@ typedef struct NSVR_PlaybackHandle NSVR_PlaybackHandle;
 typedef struct NSVR_EffectInfo NSVR_EffectInfo;
 
 typedef enum NSVR_EffectInfo_State NSVR_EffectInfo_State;
+
+typedef enum NSVR_EventKey NSVR_EventKey;

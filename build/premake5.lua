@@ -56,6 +56,7 @@ project "DiagnosticTool"
 	pchheader "stdafx.h"
 	pchsource "../src/stdafx.cpp"
 
+	hardlight_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/build/bin/Release/Win32"
 	
 	defines { "NOMINMAX", "BOOST_THREAD_USE_LIB"}
 	
@@ -67,20 +68,20 @@ project "DiagnosticTool"
 	filter {"platforms:Win32"}
 		libdirs {
 			boost_win32_dir,
-			hardlight_driver_lib_dir
+			hardlight_driver_lib_dir,
+			hardlight_dir
 		}	
-		links {"HardlightPlatform.lib", "d3d11.lib", "d3dcompiler.lib"}
+		links {"HardlightPlatform.lib", "Hardlight.lib", "d3d11.lib", "d3dcompiler.lib"}
 	
 
 
 	filter {"platforms:Win32", "configurations:Debug"}
-		libdirs {
-			path.join(nullspace_win32_dir, "Debug/Win32")
-		}
+		
 
 		postbuildcommands {
 			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
-		
+					"{COPY} %{hardlight_dir}/Hardlight.dll %{cfg.targetdir}",
+
 		--	"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 
 
@@ -91,14 +92,13 @@ project "DiagnosticTool"
 	
 
 	filter {"platforms:Win32", "configurations:Release"}
-		libdirs {
-			path.join(nullspace_win32_dir, "Release/Win32")
-		}
+		
 		defines {"NDEBUG"}
 		optimize "On" 
 		postbuildcommands {
 			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
-		
+							"{COPY} %{hardlight_dir}/Hardlight.dll %{cfg.targetdir}",
+
 		
 			--"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 

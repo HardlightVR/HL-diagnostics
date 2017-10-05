@@ -23,6 +23,21 @@
 extern "C" {
 #endif
 
+
+	typedef enum NSVR_EventKey {
+		NSVR_EventKey_Invalid = 0,
+		/* Required keys*/
+		NSVR_EventKey_Time_Float,
+
+		NSVR_EventKey_SimpleHaptic_Duration_Float = 1000,
+		NSVR_EventKey_SimpleHaptic_Strength_Float,
+		NSVR_EventKey_SimpleHaptic_Effect_Int,
+		NSVR_EventKey_SimpleHaptic_Regions_UInt32s,
+		NSVR_EventKey_SimpleHaptic_Nodes_UInt32s,
+
+		NSVR_EventKey_Max = 2147483647
+
+	} NSVR_EventKey;
 	
 	const uint32_t NSVR_SUBREGION_BLOCK = 1000000;
 
@@ -81,7 +96,7 @@ extern "C" {
 		NSVR_Effect_Tick = 11,
 		NSVR_Effect_Double_Click = 4,
 		NSVR_Effect_Triple_Click = 16,
-		NSVR_Effect_Max = 4294967295
+		NSVR_Effect_Max = 2147483647
 	} NSVR_Effect;
 
 	struct NSVR_Quaternion {
@@ -111,8 +126,8 @@ extern "C" {
 
 
 	typedef enum NSVR_EventType {
-		NSVR_EventType_BasicHapticEvent = 1,
-		NSVR_EventType_CurveHapticEvent = 2,
+		NSVR_EventType_Unknown = 0,
+		NSVR_EventType_SimpleHaptic = 1,
 		NSVR_EventType_Max = 65535
 	} NSVR_EventType;
 
@@ -146,7 +161,7 @@ extern "C" {
 		NSVR_NodeType_AbsoluteTracker
 	} NSVR_NodeType;
 	typedef struct NSVR_NodeInfo {
-		uint64_t Id;
+		uint32_t Id;
 		char Name[128];
 		NSVR_NodeType Type;
 
@@ -180,6 +195,9 @@ extern "C" {
 
 	NSVR_RETURN(NSVR_Result) NSVR_DeviceInfo_Iter_Init(NSVR_DeviceInfo_Iter* iter);
 	NSVR_RETURN(bool) NSVR_DeviceInfo_Iter_Next(NSVR_DeviceInfo_Iter* iter, NSVR_System* system);
+
+	NSVR_RETURN(NSVR_Result) NSVR_NodeInfo_Iter_Init(NSVR_NodeInfo_Iter* iter);
+	NSVR_RETURN(bool) NSVR_NodeInfo_Iter_Next(NSVR_NodeInfo_Iter* iter, uint32_t device_id, NSVR_System* system);
 
 	//Instantiates a new NSVR system context
 	NSVR_RETURN(NSVR_Result) NSVR_System_Create(NSVR_System** systemPtr);
@@ -222,11 +240,12 @@ extern "C" {
 	/* Events */
 	NSVR_RETURN(NSVR_Result) NSVR_Event_Create(NSVR_Event** eventPtr, NSVR_EventType type);
 	NSVR_RETURN(void)		 NSVR_Event_Release(NSVR_Event** event);
-	NSVR_RETURN(NSVR_Result) NSVR_Event_SetFloat(NSVR_Event* event, const char* key, float value);
-	NSVR_RETURN(NSVR_Result) NSVR_Event_SetFloats(NSVR_Event* event, const char* key, float* values, unsigned int length);
-	NSVR_RETURN(NSVR_Result) NSVR_Event_SetInt(NSVR_Event* event, const char* key, int value);
-	NSVR_RETURN(NSVR_Result) NSVR_Event_SetUInt32(NSVR_Event* event, const char* key, uint32_t value);
-	NSVR_RETURN(NSVR_Result) NSVR_Event_SetUInt32s(NSVR_Event * event, const char * key, uint32_t* array, unsigned int length);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetFloat(NSVR_Event* event, NSVR_EventKey key, float value);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetFloats(NSVR_Event* event, NSVR_EventKey key, float* values, unsigned int length);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetInt(NSVR_Event* event, NSVR_EventKey key, int value);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetUInt32(NSVR_Event* event, NSVR_EventKey key, uint32_t value);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetUInt32s(NSVR_Event * event, NSVR_EventKey key, uint32_t* array, unsigned int length);
+	NSVR_RETURN(NSVR_Result) NSVR_Event_SetUInt64s(NSVR_Event * event, NSVR_EventKey key, uint64_t* array, unsigned int length);
 
 
 
