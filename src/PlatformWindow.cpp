@@ -25,7 +25,7 @@ static void ShowHelpMarker(const char* desc)
 }
 
 static const char* const device_concepts[] = { 
-	"Unknown"
+	"Unknown",
 	"Suit",
 	"Controller",
 	"Headwear",
@@ -34,7 +34,7 @@ static const char* const device_concepts[] = {
 };
 
 static const char* const node_concepts[] = {
-	"Unknown"
+	"Unknown",
 	"Haptic",
 	"LED",
 	"InertialTracker",
