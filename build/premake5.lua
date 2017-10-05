@@ -18,18 +18,15 @@ project "DiagnosticTool"
 	-- dependencies
 
 	json_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver/Json"
-	glew_include_dir = "D:/glew-2.0.0/include"
-	glfw_include_dir = "D:/glfw-3.2.1/include"
-	glm_include_dir = "D:/glm"
+	boost_incl_dir = "D:/Libraries/boost/boost_1_61_0"
+
+	hardlight_driver_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver"
+	hardlight_driver_lib_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
 
 	includedirs {
-	--	protobuf_incl_dir,
-	--	boost_incl_dir,
-	--	protobuf_def_incl_dir
 	json_include_dir,
-	glew_include_dir,
-	glfw_include_dir,
-	glm_include_dir
+	boost_incl_dir,
+	hardlight_driver_include_dir
 	}
 
 	flags {
@@ -50,17 +47,18 @@ project "DiagnosticTool"
 	
 
 
+	boost_win32_dir = "D:/Libraries/boost/boost_1_61_0/stage/win32/lib"
+	boost_win64_dir = "D:/Libraries/boost/boost_1_61_0/stage/x64/lib"
+
 
 	nullspace_win32_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/build/bin"
-	glfw_win32_dir = "C:/Program Files (x86)/GLFW/lib"
-	glew_win32_dir = "D:/glew-2.0.0/lib/Release/Win32"
-	glfw_win32_dir2 = "D:/glfw-windows-build/Release"
-
+	platform_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
 	pchheader "stdafx.h"
 	pchsource "../src/stdafx.cpp"
 
+	hardlight_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/build/bin/Release/Win32"
 	
-	defines { "GLEW_STATIC", "NOMINMAX"}
+	defines { "NOMINMAX", "BOOST_THREAD_USE_LIB"}
 	
 	filter {"files:**jsoncpp.cpp"}
 		flags {'NoPCH'}
@@ -69,26 +67,22 @@ project "DiagnosticTool"
 	-- input: libprotobuf
 	filter {"platforms:Win32"}
 		libdirs {
-			glfw_win32_dir,
-			glew_win32_dir,
-			glfw_win32_dir2
+			boost_win32_dir,
+			hardlight_driver_lib_dir,
+			hardlight_dir
 		}	
-		links {"NSLoader.lib", "glew32s.lib", "glu32.lib", "opengl32.lib", "imm32.lib", "glfw3.lib"}
+		links {"HardlightPlatform.lib", "Hardlight.lib", "d3d11.lib", "d3dcompiler.lib"}
 	
 
 
 	filter {"platforms:Win32", "configurations:Debug"}
-		libdirs {
-			path.join(nullspace_win32_dir, "Debug/Win32")
-		}
+		
 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Debug/Win32/NSLoader.dll %{cfg.targetdir}",
-			"{COPY} ../src/VertexShader.txt %{cfg.targetdir}",
-			"{COPY} ../src/FragmentShader.txt %{cfg.targetdir}",
-			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
-			"{COPY} ../src/Zones.json %{cfg.targetdir}",
-			"{COPY} ../src/imgui.ini %{cfg.targetdir}"
+			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
+					"{COPY} %{hardlight_dir}/Hardlight.dll %{cfg.targetdir}",
+
+		--	"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 
 
 
@@ -98,18 +92,15 @@ project "DiagnosticTool"
 	
 
 	filter {"platforms:Win32", "configurations:Release"}
-		libdirs {
-			path.join(nullspace_win32_dir, "Release/Win32")
-		}
+		
 		defines {"NDEBUG"}
 		optimize "On" 
 		postbuildcommands {
-			"{COPY} ../../NSLoader/build/bin/Release/Win32/NSLoader.dll %{cfg.targetdir}",
-			"{COPY} ../src/VertexShader.txt %{cfg.targetdir}",
-			"{COPY} ../src/FragmentShader.txt %{cfg.targetdir}",
-			"{COPY} ../src/PadToZone.json %{cfg.targetdir}",
-			"{COPY} ../src/Zones.json %{cfg.targetdir}",
-			"{COPY} ../src/imgui.ini %{cfg.targetdir}"
+			"{COPY} %{platform_dir}/HardlightPlatform.dll %{cfg.targetdir}",
+							"{COPY} %{hardlight_dir}/Hardlight.dll %{cfg.targetdir}",
+
+		
+			--"{COPY} ../src/imgui.ini %{cfg.targetdir}"
 
 		}
 

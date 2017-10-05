@@ -21,6 +21,9 @@
     <ClInclude Include="..\src\AreaFlags.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\DllUtils.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\LogWindow.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -36,7 +39,7 @@
     <ClInclude Include="..\src\NSLoader_fwds.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\ShaderOps.h">
+    <ClInclude Include="..\src\PlatformWindow.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\imconfig.h">
@@ -45,7 +48,7 @@
     <ClInclude Include="..\src\imgui.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\imgui_impl_glfw_gl3.h">
+    <ClInclude Include="..\src\imgui_impl_dx11.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\imgui_internal.h">
@@ -74,16 +77,19 @@
     <ClCompile Include="..\src\LogWindow.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\PlatformWindow.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\imgui.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imgui_demo.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\imgui_draw.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\imgui_impl_glfw_gl3.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\loadShader.cpp">
+    <ClCompile Include="..\src\imgui_impl_dx11.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\main.cpp">
