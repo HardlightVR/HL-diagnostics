@@ -1,23 +1,23 @@
 #pragma once
 
 #include "NSDriverApi.h"
-#include "NSLoader.h"
-#include "NSLoader_Internal.h"
+#include "HLVR.h"
+#include "HLVR_Experimental.h"
 static void ShowHelpMarker(const char* desc);
 
 
 class PlatformWindow {
 public:
-	PlatformWindow(hvr_platform* platform, NSVR_System* plugin);
+	PlatformWindow(hvr_platform* platform, HLVR_Agent* plugin);
 	void Render();
 	~PlatformWindow();
 	
 
 private:
 	hvr_platform* m_platform;
-	NSVR_System* m_plugin;
+	HLVR_Agent* m_plugin;
 
-	NSVR_BodyView* m_retainedBodyview;
+	HLVR_BodyView* m_retainedBodyview;
 	void renderPlatformUI();
 	void renderAvailableHardwarePlugins();
 

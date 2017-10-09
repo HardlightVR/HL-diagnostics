@@ -15,7 +15,7 @@
 #include "imgui_impl_dx11.h"
 #include "NSDriverApi.h"
 #include "PlatformWindow.h"
-#include "NSLoader.h"
+#include "HLVR.h"
 
 
 // Data
@@ -127,7 +127,7 @@ void ShowDriverInformation() {
 		s << "HardlightPlatform.dll version " << (version >> 16) << "." << ((version << 16) >> 16);
 		ImGui::Text(s.str().c_str());
 
-		auto pluginVersion = NSVR_Version_Get();
+		auto pluginVersion = HLVR_Version_Get();
 		std::stringstream s2;
 		s2<< "Hardlight.dll version " << (pluginVersion >> 16) << "." << ((pluginVersion << 16) >> 16);
 		ImGui::Text(s2.str().c_str());
@@ -136,36 +136,36 @@ void ShowDriverInformation() {
 }
 
 
-void testPads(NSVR_System* system) {
+void testPads(HLVR_Agent* system) {
 
 
-	NSVR_NodeInfo_Iter nodeIter;
-	NSVR_NodeInfo_Iter_Init(&nodeIter);
+	HLVR_NodeIterator nodeIter;
+	HLVR_NodeIterator_Init(&nodeIter);
 
-	NSVR_Timeline* timeline;
-	NSVR_Timeline_Create(&timeline);
+	HLVR_Timeline* timeline;
+	HLVR_Timeline_Create(&timeline);
 
 	float timeOffset = 0.0f;
-	while (NSVR_NodeInfo_Iter_Next(&nodeIter, 0, system)) {
-		NSVR_Event* event;
-		NSVR_Event_Create(&event, NSVR_EventType_SimpleHaptic);
-		NSVR_Event_SetUInt32s(event, NSVR_EventKey_SimpleHaptic_Nodes_UInt32s, (uint32_t*)(&nodeIter.NodeInfo.Id), 1);
-		NSVR_Event_SetInt(event, NSVR_EventKey_SimpleHaptic_Effect_Int, NSVR_Effect_Hum);
-		NSVR_Event_SetFloat(event, NSVR_EventKey_SimpleHaptic_Duration_Float, 1.0);
-		NSVR_Event_SetFloat(event, NSVR_EventKey_Time_Float, timeOffset);
-		NSVR_Timeline_AddEvent(timeline, event);
-		NSVR_Event_Release(&event);
+	while (HLVR_NodeIterator_Next(&nodeIter, 0, system)) {
+		HLVR_Event* event;
+		HLVR_Event_Create(&event, HLVR_EventType_SimpleHaptic);
+		HLVR_Event_SetUInt32s(event, HLVR_EventKey_SimpleHaptic_Nodes_UInt32s, (uint32_t*)(&nodeIter.NodeInfo.Id), 1);
+		HLVR_Event_SetInt(event, HLVR_EventKey_SimpleHaptic_Effect_Int, HLVR_Waveform_Hum);
+		HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Duration_Float, 1.0);
+		HLVR_Event_SetFloat(event, HLVR_EventKey_Time_Float, timeOffset);
+		HLVR_Timeline_AddEvent(timeline, event);
+		HLVR_Event_Destroy(&event);
 
 		timeOffset += 1.0f;
 	}
-	NSVR_PlaybackHandle* handle;
-	NSVR_PlaybackHandle_Create(&handle);
-	NSVR_Timeline_Transmit(timeline, system, handle);
+	HLVR_Effect* handle;
+	HLVR_Effect_Create(&handle);
+	HLVR_Timeline_Transmit(timeline, system, handle);
 
-	NSVR_Timeline_Release(&timeline);
+	HLVR_Timeline_Destroy(&timeline);
 
-	NSVR_PlaybackHandle_Command(handle, NSVR_PlaybackCommand_Play);
-	NSVR_PlaybackHandle_Release(&handle);
+	HLVR_Effect_Play(handle);
+	HLVR_Effect_Destroy(&handle);
 }
 
 int main(int, char**)
@@ -203,9 +203,9 @@ int main(int, char**)
 	hvr_platform_startup(context);
 
 
-	NSVR_System* plugin = nullptr;
-	NSVR_System_Create(&plugin);
-	assert(NSVR_Version_IsCompatibleDLL());
+	HLVR_Agent* plugin = nullptr;
+	HLVR_Agent_Create(&plugin, nullptr);
+	assert(HLVR_Version_IsCompatibleDLL());
 
 	
 	// Main loop
@@ -237,21 +237,7 @@ int main(int, char**)
 			testPads(plugin);
 		}
 
-		//if (ImGui::Button("TEST")) {
-			
-		//}
-		//if (ImGui::Button("WTF")) {
-			NSVR_ServiceInfo info = { 0 };
-
-			int result = NSVR_System_GetServiceInfo(plugin, &info);
-			if (NSVR_SUCCESS(result)) {
-				std::stringstream ss;
-				ss << "Connected to service version " << info.ServiceMajor << "." << info.ServiceMinor;
-				ImGui::Begin("WTF");
-				ImGui::Text(ss.str().c_str());
-				ImGui::End();
-			}
-		//}
+		
 		
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);
 		ImGui::Render();
@@ -261,7 +247,7 @@ int main(int, char**)
 		
     }
 
-	NSVR_System_Release(&plugin);
+	HLVR_Agent_Destroy(&plugin);
 
 	hvr_platform_shutdown(context);
 	hvr_platform_destroy(&context);

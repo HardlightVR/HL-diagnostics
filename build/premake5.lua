@@ -22,11 +22,13 @@ project "DiagnosticTool"
 
 	hardlight_driver_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver"
 	hardlight_driver_lib_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
+	hardlight_api_include_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/src/Plugin/include"
 
 	includedirs {
-	json_include_dir,
-	boost_incl_dir,
-	hardlight_driver_include_dir
+		json_include_dir,
+		boost_incl_dir,
+		hardlight_driver_include_dir,
+		hardlight_api_include_dir
 	}
 
 	flags {

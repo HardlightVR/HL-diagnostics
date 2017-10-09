@@ -27,18 +27,6 @@
     <ClInclude Include="..\src\LogWindow.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\NSLoader.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\NSLoader_Errors.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\NSLoader_Internal.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\NSLoader_fwds.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\PlatformWindow.h">
       <Filter>src</Filter>
     </ClInclude>

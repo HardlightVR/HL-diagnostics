@@ -59,7 +59,7 @@
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NOMINMAX;BOOST_THREAD_USE_LIB;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\Libraries\boost\boost_1_61_0;..\..\..\..\NS_Unreal_SDK\src\Driver;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\Libraries\boost\boost_1_61_0;..\..\..\..\NS_Unreal_SDK\src\Driver;..\..\NSLoader\src\Plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -81,7 +81,7 @@ IF EXIST ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll\ (xcopy /Q /E /Y /
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NOMINMAX;BOOST_THREAD_USE_LIB;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\Libraries\boost\boost_1_61_0;..\..\..\..\NS_Unreal_SDK\src\Driver;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\NS_Unreal_SDK\src\Driver\Json;D:\Libraries\boost\boost_1_61_0;..\..\..\..\NS_Unreal_SDK\src\Driver;..\..\NSLoader\src\Plugin\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -106,10 +106,6 @@ IF EXIST ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll\ (xcopy /Q /E /Y /
     <ClInclude Include="..\src\AreaFlags.h" />
     <ClInclude Include="..\src\DllUtils.h" />
     <ClInclude Include="..\src\LogWindow.h" />
-    <ClInclude Include="..\src\NSLoader.h" />
-    <ClInclude Include="..\src\NSLoader_Errors.h" />
-    <ClInclude Include="..\src\NSLoader_Internal.h" />
-    <ClInclude Include="..\src\NSLoader_fwds.h" />
     <ClInclude Include="..\src\PlatformWindow.h" />
     <ClInclude Include="..\src\imconfig.h" />
     <ClInclude Include="..\src\imgui.h" />
