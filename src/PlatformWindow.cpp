@@ -76,7 +76,7 @@ static const std::unordered_map<uint32_t, const char*> region_names = {
 	{ 29 * HLVR_SUBREGION_BLOCK , "palm_right" },
 };
 
-PlatformWindow::PlatformWindow(hvr_platform * platform, HLVR_Agent* plugin)
+PlatformWindow::PlatformWindow(hvr_platform * platform, HLVR_System* plugin)
 	: m_platform(platform)
 	, m_plugin(plugin)
 {

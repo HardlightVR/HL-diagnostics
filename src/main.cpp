@@ -16,7 +16,7 @@
 #include "NSDriverApi.h"
 #include "PlatformWindow.h"
 #include "HLVR.h"
-
+#include <iostream>
 
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
@@ -136,7 +136,7 @@ void ShowDriverInformation() {
 }
 
 
-void testPads(HLVR_Agent* system) {
+void testPads(HLVR_System* system) {
 
 
 	HLVR_NodeIterator nodeIter;
@@ -146,15 +146,20 @@ void testPads(HLVR_Agent* system) {
 	HLVR_Timeline_Create(&timeline);
 
 	float timeOffset = 0.0f;
-	while (HLVR_NodeIterator_Next(&nodeIter, 0, system)) {
-		HLVR_Event* event;
-		HLVR_Event_Create(&event, HLVR_EventType_SimpleHaptic);
-		HLVR_Event_SetUInt32s(event, HLVR_EventKey_SimpleHaptic_Nodes_UInt32s, (uint32_t*)(&nodeIter.NodeInfo.Id), 1);
-		HLVR_Event_SetInt(event, HLVR_EventKey_SimpleHaptic_Effect_Int, HLVR_Waveform_Hum);
-		HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Duration_Float, 1.0);
-		HLVR_Event_SetFloat(event, HLVR_EventKey_Time_Float, timeOffset);
-		HLVR_Timeline_AddEvent(timeline, event);
-		HLVR_Event_Destroy(&event);
+	while (HLVR_OK(HLVR_NodeIterator_Next(&nodeIter, 0, system))) {
+		HLVR_EventData* event;
+		HLVR_EventData_Create(&event);
+		HLVR_EventData_SetUInt32s(event, HLVR_EventDataKey_SimpleHaptic_Where_Nodes_UInt32s, (uint32_t*)(&nodeIter.NodeInfo.Id), 1);
+		HLVR_EventData_SetInt(event, HLVR_EventDataKey_SimpleHaptic_Effect_Int, HLVR_Waveform_Hum);
+		HLVR_EventData_SetFloat(event, HLVR_EventDataKey_SimpleHaptic_Duration_Float, 1.0);
+
+		HLVR_EventData_ValidationResult result;
+		HLVR_EventData_Validate(event, HLVR_EventType_SimpleHaptic, &result);
+		
+		assert(result.Count == 0);
+
+		HLVR_Timeline_AddEvent(timeline, timeOffset, event, HLVR_EventType_SimpleHaptic);
+		HLVR_EventData_Destroy(&event);
 
 		timeOffset += 1.0f;
 	}
@@ -203,8 +208,8 @@ int main(int, char**)
 	hvr_platform_startup(context);
 
 
-	HLVR_Agent* plugin = nullptr;
-	HLVR_Agent_Create(&plugin, nullptr);
+	HLVR_System* plugin = nullptr;
+	HLVR_System_Create(&plugin, nullptr);
 	assert(HLVR_Version_IsCompatibleDLL());
 
 	
@@ -247,7 +252,7 @@ int main(int, char**)
 		
     }
 
-	HLVR_Agent_Destroy(&plugin);
+	HLVR_System_Destroy(&plugin);
 
 	hvr_platform_shutdown(context);
 	hvr_platform_destroy(&context);
