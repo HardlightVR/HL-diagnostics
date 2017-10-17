@@ -9,13 +9,15 @@
 #include <dinput.h>
 #include <vector>
 #include <sstream>
-
-
+#include <memory>
+#include <functional>
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "NSDriverApi.h"
 #include "PlatformWindow.h"
 #include "HLVR.h"
+#include <thread>
+#include "HLVR_Experimental.h"
 #include <iostream>
 
 // Data
@@ -119,6 +121,55 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
+
+struct Effect {
+	Effect() {
+		HLVR_Effect_Create(&m_ptr);
+	}
+	~Effect() {
+		HLVR_Effect_Destroy(&m_ptr);
+	}
+	void Play() {
+		HLVR_Effect_Play(m_ptr);
+	}
+	HLVR_Effect* m_ptr;
+
+	HLVR_Effect* raw() { return m_ptr; }
+};
+
+
+struct Timeline {
+	Timeline() {
+		HLVR_Timeline_Create(&m_ptr);
+	}
+	~Timeline() {
+		HLVR_Timeline_Destroy(&m_ptr);
+	}
+	void AddEvent(double time, HLVR_Event* data) {
+		HLVR_Timeline_AddEvent(m_ptr, time, data);
+	}
+	void Transmit(HLVR_System* system, Effect* effect) {
+		HLVR_Timeline_Transmit(m_ptr, system, effect->raw());
+	}
+	HLVR_Timeline* m_ptr;
+};
+
+struct NodeIterator {
+	HLVR_NodeIterator m_it;
+	uint32_t device;
+	HLVR_System* system;
+	NodeIterator(uint32_t device_id, HLVR_System* system) :device(device_id), system(system){
+		HLVR_NodeIterator_Init(&m_it);
+	}
+
+	bool Next() {
+		return HLVR_OK(HLVR_NodeIterator_Next(&m_it, device, system));
+	}
+
+	const HLVR_NodeInfo& Value() {
+		return m_it.NodeInfo;
+	}
+};
 void ShowDriverInformation() {
 	ImGui::Begin("Platform Info");
 	{
@@ -131,46 +182,48 @@ void ShowDriverInformation() {
 		std::stringstream s2;
 		s2<< "Hardlight.dll version " << (pluginVersion >> 16) << "." << ((pluginVersion << 16) >> 16);
 		ImGui::Text(s2.str().c_str());
+
+
+
 	}
 	ImGui::End();
 }
 
+auto make_simplehaptic(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& nodes, float strength = 1.0f) {
+	HLVR_Event* event;
+	HLVR_Event_Create(&event, HLVR_EventType_SimpleHaptic);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_SimpleHaptic_Where_Nodes_UInt32s, nodes.data(), nodes.size());
+	HLVR_Event_SetInt(event, HLVR_EventKey_SimpleHaptic_Effect_Int, waveform);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Duration_Float, duration);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Strength_Float, strength);
 
+	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
+	return ptr;
+}
 void testPads(HLVR_System* system) {
 
 
-	HLVR_NodeIterator nodeIter;
-	HLVR_NodeIterator_Init(&nodeIter);
 
-	HLVR_Timeline* timeline;
-	HLVR_Timeline_Create(&timeline);
+	Timeline timeline;
+
+	NodeIterator nodeIter(hlvr_allnodes, system);
 
 	float timeOffset = 0.0f;
-	while (HLVR_OK(HLVR_NodeIterator_Next(&nodeIter, 0, system))) {
-		HLVR_EventData* event;
-		HLVR_EventData_Create(&event);
-		HLVR_EventData_SetUInt32s(event, HLVR_EventDataKey_SimpleHaptic_Where_Nodes_UInt32s, (uint32_t*)(&nodeIter.NodeInfo.Id), 1);
-		HLVR_EventData_SetInt(event, HLVR_EventDataKey_SimpleHaptic_Effect_Int, HLVR_Waveform_Hum);
-		HLVR_EventData_SetFloat(event, HLVR_EventDataKey_SimpleHaptic_Duration_Float, 1.0);
+	while (nodeIter.Next()) {
+		auto event = make_simplehaptic(1.0, HLVR_Waveform_Hum, { nodeIter.Value().Id });
 
-		HLVR_EventData_ValidationResult result;
-		HLVR_EventData_Validate(event, HLVR_EventType_SimpleHaptic, &result);
+		HLVR_Event_ValidationResult result;
+		HLVR_Event_Validate(event.get(), &result);
 		
 		assert(result.Count == 0);
 
-		HLVR_Timeline_AddEvent(timeline, timeOffset, event, HLVR_EventType_SimpleHaptic);
-		HLVR_EventData_Destroy(&event);
-
+		timeline.AddEvent(timeOffset, event.get());
 		timeOffset += 1.0f;
 	}
-	HLVR_Effect* handle;
-	HLVR_Effect_Create(&handle);
-	HLVR_Timeline_Transmit(timeline, system, handle);
 
-	HLVR_Timeline_Destroy(&timeline);
-
-	HLVR_Effect_Play(handle);
-	HLVR_Effect_Destroy(&handle);
+	Effect effect;
+	timeline.Transmit(system, &effect);
+	effect.Play();
 }
 
 int main(int, char**)
@@ -207,7 +260,11 @@ int main(int, char**)
 	hvr_platform_create(&context);
 	hvr_platform_startup(context);
 
+	//Weird issue where there's a std::bad_alloc if these are started at nearly the same time. I think boost IPC shared memory is at the root
+	//of it. Two threads allocating in the same process...same shared objects..
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	assert(HLVR_Version_IsCompatibleDLL());
 	HLVR_System* plugin = nullptr;
 	HLVR_System_Create(&plugin, nullptr);
 	assert(HLVR_Version_IsCompatibleDLL());
@@ -235,6 +292,13 @@ int main(int, char**)
 
 		ShowDriverInformation();
 
+		HLVR_RuntimeInfo info;
+		if (HLVR_OK(HLVR_System_GetRuntimeInfo(plugin, &info))) {
+			ImGui::Text("Plugin has connected to runtime version %d.%d", info.MajorVersion, info.MinorVersion);
+		}
+		else {
+			ImGui::Text("Plugin is not connected to runtime.");
+		}
 		platformWindow.Render();
 
 
@@ -242,6 +306,11 @@ int main(int, char**)
 			testPads(plugin);
 		}
 
+		if (ImGui::Button("STREAM")) {
+			//random node 1.. hopefully its something
+			auto haptic = make_simplehaptic(0.0, HLVR_Waveform_Click, { 1 });
+			HLVR_System_StreamEvent(plugin, haptic.get());
+		}
 		
 		
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);

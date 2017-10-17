@@ -155,7 +155,7 @@ void PlatformWindow::renderPluginSide()
 	while (HLVR_OK(HLVR_DeviceIterator_Next(&iter, m_plugin))) {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildWindowRounding, 5.0f);
-		ImGui::BeginChild(iter.DeviceInfo.Name, ImVec2(0, 100), true, ImGuiWindowFlags_AlwaysAutoResize);
+		ImGui::BeginChild(iter.DeviceInfo.Id, ImVec2(0, 100), true, ImGuiWindowFlags_AlwaysAutoResize);
 			ImGui::Text(iter.DeviceInfo.Name);
 			ImGui::Text("Status: "); ImGui::SameLine();
 			if (iter.DeviceInfo.Status == HLVR_DeviceStatus_Connected) {
@@ -183,6 +183,14 @@ void PlatformWindow::renderPluginSide()
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
 	}
+
+	HLVR_TrackingUpdate tracking = { 0 };
+	if (HLVR_OK(HLVR_System_PollTracking(m_plugin, &tracking))) {
+		ImGui::Text("X: %f", tracking.chest.x);
+	}
+
+
+
 }
 
 void PlatformWindow::renderEmulation()
@@ -203,6 +211,7 @@ void PlatformWindow::renderEmulation()
 		
 
 		uint32_t region = hlvr_region_UNKNOWN;
+		
 		HLVR_BodyView_GetNodeRegion(m_retainedBodyview, i, &region);
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::HSV(i / 7.0f, 0.5f, 0.5f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, (ImVec4)ImColor::HSV(i / 7.0f, 0.6f, 0.5f));
@@ -210,7 +219,7 @@ void PlatformWindow::renderEmulation()
 		ImGui::PushStyleColor(ImGuiCol_SliderGrab, (ImVec4)ImColor::HSV(i / 7.0f, 0.9f, 0.9f));
 		float intensity = 0;
 		HLVR_BodyView_GetIntensity(m_retainedBodyview, i, &intensity);
-		ImGui::VSliderFloat(std::string("##"+std::string(region_names.at(region))).c_str(), ImVec2(25, 40), &intensity, 0, 1.0, "%.1f");
+		ImGui::VSliderFloat(std::string(std::string(region_names.at(region))).c_str(), ImVec2(25, 40), &intensity, 0, 1.0, "%.1f");
 
 		//ImGui::VSliderFloat(region_names.at(region), ImVec2(25, 40), &intensity, 0, 1.0, "%.1f");
 		ImGui::PopStyleColor(4);
@@ -218,35 +227,29 @@ void PlatformWindow::renderEmulation()
 		if ((i % 8) < 7) ImGui::SameLine();
 	}
 	ImGui::End();
-
-
-
-	/*static bool selected[16] = { true, false, false, false, false, true, false, false, false, false, true, false, false, false, false, true };
-	for (int i = 0; i < 16; i++)
-	{
-		ImGui::PushID(i);
-		if (ImGui::Selectable("Sailor", &selected[i], 0, ImVec2(50, 50)))
-		{
-			int x = i % 4, y = i / 4;
-			if (x > 0) selected[i - 1] ^= 1;
-			if (x < 3) selected[i + 1] ^= 1;
-			if (y > 0) selected[i - 4] ^= 1;
-			if (y < 3) selected[i + 4] ^= 1;
-		}
-		if ((i % 4) < 3) ImGui::SameLine();
-		ImGui::PopID();
-	}*/
 }
 
 void PlatformWindow::renderPlatformUI()
 {
 	ImGui::Begin("Device Manager");
 	{
+		static float quat[4];
+		ImGui::SliderFloat4("Quaternion", quat, 0.0f, 1.0f);
+
 		if (ImGui::Button("Create virtual Hardlight Suit")) {
 			static uint32_t device_id = 20;
 			hvr_platform_createdevice(m_platform, device_id);
+			hvr_platform_createdevice_with_tracking(m_platform, device_id, [](uint32_t, hvr_quaternion* q) {
+				q->w = quat[0];
+				q->x = quat[1];
+				q->y = quat[2];
+				q->z = quat[3];
+			
+			});
 			device_id++;
 		}
+
+	
 	}
 	ImGui::End();
 }

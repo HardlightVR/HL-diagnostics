@@ -67,12 +67,12 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>HardlightPlatform.lib;Hardlight.lib;d3d11.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\Libraries\boost\boost_1_61_0\stage\win32\lib;..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32;..\..\NSLoader\build\bin\Release\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Libraries\boost\boost_1_61_0\stage\win32\lib;..\..\..\..\NS_Unreal_SDK\build\bin\Debug\Win32;..\..\NSLoader\build\bin\Debug\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>IF EXIST ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll\ (xcopy /Q /E /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Release\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul)
-IF EXIST ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul)</Command>
+      <Command>IF EXIST ..\..\..\..\NS_Unreal_SDK\build\bin\Debug\Win32\HardlightPlatform.dll\ (xcopy /Q /E /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Debug\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\..\..\NS_Unreal_SDK\build\bin\Debug\Win32\HardlightPlatform.dll bin\Debug\Win32 &gt; nul)
+IF EXIST ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll\ (xcopy /Q /E /Y /I ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul) ELSE (xcopy /Q /Y /I ..\..\NSLoader\build\bin\Debug\Win32\Hardlight.dll bin\Debug\Win32 &gt; nul)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

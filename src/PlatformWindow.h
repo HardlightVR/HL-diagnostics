@@ -6,6 +6,7 @@
 static void ShowHelpMarker(const char* desc);
 
 
+
 class PlatformWindow {
 public:
 	PlatformWindow(hvr_platform* platform, HLVR_System* plugin);
