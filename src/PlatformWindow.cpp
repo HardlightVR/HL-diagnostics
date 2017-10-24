@@ -5,14 +5,8 @@
 #include "HLVR_Errors.h"
 #include <sstream>
 #include <unordered_map>
-//
-//hvr_diagnostics_ui menu;
-//menu.keyval = [](const char* key, const char* val) {
-//	ImGui::Text("%s: %s", key, val);
-//};
-//menu.button = [](const char* label) {
-//	return ImGui::Button(label);
-//};
+
+
 static void ShowHelpMarker(const char* desc)
 {
 	ImGui::TextDisabled("(?)");
@@ -32,7 +26,8 @@ static const char* const device_concepts[] = {
 	"Controller",
 	"Headwear",
 	"Gun",
-	"Sword" 
+	"Sword" ,
+	"Gauntlet"
 };
 
 static const char* const node_concepts[] = {
@@ -48,6 +43,8 @@ static const std::unordered_map<uint32_t, const char*> region_names = {
 	{ 1 * HLVR_SUBREGION_BLOCK , "body" },
 	{ 2 * HLVR_SUBREGION_BLOCK , "torso" },
 	{ 3 * HLVR_SUBREGION_BLOCK , "torso_front" },
+	{ 3 * HLVR_SUBREGION_BLOCK +1, "middle_sternum" },
+
 	{ 4 * HLVR_SUBREGION_BLOCK , "chest_left" },
 	{ 5 * HLVR_SUBREGION_BLOCK , "chest_right" },
 	{ 6 * HLVR_SUBREGION_BLOCK , "upper_ab_left" },
@@ -186,7 +183,13 @@ void PlatformWindow::renderPluginSide()
 
 	HLVR_TrackingUpdate tracking = { 0 };
 	if (HLVR_OK(HLVR_System_PollTracking(m_plugin, &tracking))) {
+		ImGui::Text("Chest Quaternion");
+
 		ImGui::Text("X: %f", tracking.chest.x);
+		ImGui::Text("Y: %f", tracking.chest.y);
+		ImGui::Text("Z: %f", tracking.chest.z);
+		ImGui::Text("W: %f", tracking.chest.w);
+
 	}
 
 
@@ -231,25 +234,5 @@ void PlatformWindow::renderEmulation()
 
 void PlatformWindow::renderPlatformUI()
 {
-	ImGui::Begin("Device Manager");
-	{
-		static float quat[4];
-		ImGui::SliderFloat4("Quaternion", quat, 0.0f, 1.0f);
-
-		if (ImGui::Button("Create virtual Hardlight Suit")) {
-			static uint32_t device_id = 20;
-			hvr_platform_createdevice(m_platform, device_id);
-			hvr_platform_createdevice_with_tracking(m_platform, device_id, [](uint32_t, hvr_quaternion* q) {
-				q->w = quat[0];
-				q->x = quat[1];
-				q->y = quat[2];
-				q->z = quat[3];
-			
-			});
-			device_id++;
-		}
-
 	
-	}
-	ImGui::End();
 }

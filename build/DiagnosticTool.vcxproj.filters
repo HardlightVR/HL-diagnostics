@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="NS_Unreal_SDK">
@@ -57,6 +57,10 @@
     <ClInclude Include="..\src\targetver.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\debug_draw.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\DirectXRenderInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\NS_Unreal_SDK\src\Driver\Json\jsoncpp.cpp">
@@ -86,5 +90,9 @@
     <ClCompile Include="..\src\stdafx.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\debug_draw.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\DirectXRenderInterface.cpp" />
   </ItemGroup>
 </Project>

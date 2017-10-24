@@ -19,7 +19,9 @@
 #include <thread>
 #include "HLVR_Experimental.h"
 #include <iostream>
+#include "DirectXRenderInterface.h"
 
+#include <chrono>
 // Data
 static ID3D11Device*            g_pd3dDevice = NULL;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = NULL;
@@ -189,20 +191,29 @@ void ShowDriverInformation() {
 	ImGui::End();
 }
 
-auto make_simplehaptic(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& nodes, float strength = 1.0f) {
+auto DiscreteHaptic_withregions(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& regions, float strength = 1.0f) {
 	HLVR_Event* event;
-	HLVR_Event_Create(&event, HLVR_EventType_SimpleHaptic);
-	HLVR_Event_SetUInt32s(event, HLVR_EventKey_SimpleHaptic_Where_Nodes_UInt32s, nodes.data(), nodes.size());
-	HLVR_Event_SetInt(event, HLVR_EventKey_SimpleHaptic_Effect_Int, waveform);
-	HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Duration_Float, duration);
-	HLVR_Event_SetFloat(event, HLVR_EventKey_SimpleHaptic_Strength_Float, strength);
+	HLVR_Event_Create(&event, HLVR_EventType_DiscreteHaptic);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Regions_UInt32s, regions.data(), regions.size());
+	HLVR_Event_SetInt(event, HLVR_EventKey_DiscreteHaptic_Waveform_Int, waveform);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Duration_Float, duration);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Strength_Float, strength);
+
+	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
+	return ptr;
+}
+auto DiscreteHaptic_withnodes(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& nodes, float strength = 1.0f) {
+	HLVR_Event* event;
+	HLVR_Event_Create(&event, HLVR_EventType_DiscreteHaptic);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Nodes_UInt32s, nodes.data(), nodes.size());
+	HLVR_Event_SetInt(event, HLVR_EventKey_DiscreteHaptic_Waveform_Int, waveform);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Duration_Float, duration);
+	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Strength_Float, strength);
 
 	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
 	return ptr;
 }
 void testPads(HLVR_System* system) {
-
-
 
 	Timeline timeline;
 
@@ -210,7 +221,7 @@ void testPads(HLVR_System* system) {
 
 	float timeOffset = 0.0f;
 	while (nodeIter.Next()) {
-		auto event = make_simplehaptic(1.0, HLVR_Waveform_Hum, { nodeIter.Value().Id });
+		auto event = DiscreteHaptic_withnodes(1.0, HLVR_Waveform_Hum, { nodeIter.Value().Id });
 
 		HLVR_Event_ValidationResult result;
 		HLVR_Event_Validate(event.get(), &result);
@@ -226,13 +237,31 @@ void testPads(HLVR_System* system) {
 	effect.Play();
 }
 
+
+void DrawQuaternionWidget(const HLVR_Quaternion& q) {
+	const ddVec3 boxColor = { 0.0f, 0.8f, 0.8f };
+	const ddVec3 boxCenter = { 0.0f, 0.0f, 3.0f };
+
+
+	const ddMat4x4 quaternion = {
+		(1.0 - 2.0 * q.y * q.y) - (2.0 * q.z * q.z),      (2.0 * q.x * q.y) - (2 * q.z * q.w),          (2.0 * q.x * q.z) + (2.0 * q.y * q.w), 0,
+		(2.0 * q.x * q.y) + (2.0 * q.z * q.w)      ,      (1.0 - 2.0 * q.x * q.x) - (2.0 * q.z * q.z),  (2.0 * q.y * q.z) - (2.0 * q.x * q.w), 0, 
+		(2.0 * q.x * q.z) - (2.0 * q.y * q.w)     ,	  (2 * q.y * q.z) + (2 * q.x * q.w),            (1.0 - 2.0 * q.x * q.x) - (2.0 * q.y * q.y), 0,
+		0,0,0,1
+	};
+	
+
+	dd::axisTriad(quaternion, 3.0f, 6.0f);
+
+
+}
 int main(int, char**)
 {
 	
 	// Create application window
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, LoadCursor(NULL, IDC_ARROW), NULL, NULL, _T("ImGui Example"), NULL };
+	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, LoadCursor(NULL, IDC_ARROW), NULL, NULL, _T("Hardlight Panel"), NULL };
 	RegisterClassEx(&wc);
-	HWND hwnd = CreateWindow(_T("ImGui Example"), _T("Hardlight Platform Diagnostics"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+	HWND hwnd = CreateWindow(_T("Hardlight Panel"), _T("Hardlight Panel"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
 	// Initialize Direct3D
 	if (CreateDeviceD3D(hwnd) < 0)
@@ -241,6 +270,8 @@ int main(int, char**)
 		UnregisterClass(_T("ImGui Example"), wc.hInstance);
 		return 1;
 	}
+
+
 
 	// Show the window
 	ShowWindow(hwnd, SW_SHOWDEFAULT);
@@ -270,6 +301,9 @@ int main(int, char**)
 	assert(HLVR_Version_IsCompatibleDLL());
 
 	
+	DirectXRenderInterface myDebugRenderer(nullptr);
+	dd::initialize(&myDebugRenderer);
+
 	// Main loop
 	MSG msg;
 	ZeroMemory(&msg, sizeof(msg));
@@ -280,6 +314,7 @@ int main(int, char**)
     while (msg.message != WM_QUIT)
     {
 	
+
 		if (PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -301,17 +336,45 @@ int main(int, char**)
 		}
 		platformWindow.Render();
 
+		ImGui::Begin("3DStuff");
+			HLVR_TrackingUpdate t;
+			if (HLVR_OK(HLVR_System_PollTracking(plugin, &t))) {
+				myDebugRenderer.SetDrawlist(ImGui::GetWindowDrawList());
+
+
+				ImVec2 chestOrigin = ImGui::GetCursorScreenPos();
+				chestOrigin.x += 30.0f;
+				chestOrigin.y += 20.0f;
+				myDebugRenderer.SetOrigin(chestOrigin);
+
+				ImGui::Text("Chest IMU");
+				DrawQuaternionWidget(t.chest);
+			}
+		ImGui::End();
 
 		if (ImGui::Button("TEST")) {
 			testPads(plugin);
 		}
 
-		if (ImGui::Button("STREAM")) {
-			//random node 1.. hopefully its something
-			auto haptic = make_simplehaptic(0.0, HLVR_Waveform_Click, { 1 });
-			HLVR_System_StreamEvent(plugin, haptic.get());
+		static float click_interval = 0;
+		static bool clicking_enabled = false;
+		static std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
+		if (ImGui::VSliderFloat("Click Hz", ImVec2(25, 100), &click_interval, 0, 10.0, "%.1f")) {
+			clicking_enabled = click_interval > 0;
+		}
+
+		if (clicking_enabled) {
+
+			int cycle_time = 1.0 / click_interval;
+			auto delay = std::chrono::milliseconds(1000 * cycle_time);
+			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - lastTime) > delay) {
+				auto haptic = DiscreteHaptic_withregions(0.0, HLVR_Waveform_Click, { hlvr_region_body });
+				HLVR_System_StreamEvent(plugin, haptic.get());
+				lastTime = std::chrono::high_resolution_clock::now();
+			}
 		}
 		
+		dd::flush(0);
 		
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);
 		ImGui::Render();
@@ -321,6 +384,8 @@ int main(int, char**)
 		
     }
 
+	dd::shutdown();
+
 	HLVR_System_Destroy(&plugin);
 
 	hvr_platform_shutdown(context);
@@ -329,7 +394,7 @@ int main(int, char**)
 	ImGui_ImplDX11_Shutdown();
 
 	CleanupDeviceD3D();
-	UnregisterClass(_T("ImGui Example"), wc.hInstance);
+	UnregisterClass(_T("Hardlight Panel"), wc.hInstance);
     // Cleanup
   
 

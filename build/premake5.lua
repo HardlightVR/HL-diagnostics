@@ -44,7 +44,7 @@ project "DiagnosticTool"
 	boost_win32_dir = "D:/Libraries/boost/boost_1_61_0/stage/win32/lib"
 	boost_win64_dir = "D:/Libraries/boost/boost_1_61_0/stage/x64/lib"
 
-	platform_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver"
+	platform_include_dir = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/src/Driver/runtime_include"
 	hardlight_include_dir = "C:/Users/NullSpace Team/Documents/Visual Studio 2015/Projects/NSLoader/src/Plugin/include"
 
 	platform_dir_release = "C:/Users/NullSpace Team/Documents/NS_Unreal_SDK/build/bin/Release/Win32"
