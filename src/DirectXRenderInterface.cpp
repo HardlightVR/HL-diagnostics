@@ -6,21 +6,35 @@ DirectXRenderInterface::DirectXRenderInterface(ImDrawList * drawList) : m_list(d
 {
 }
 
-std::vector<ImVec2> fromDdVertex(const dd::DrawVertex* lines, int count, const ImVec2& origin) {
-	std::vector<ImVec2> out;
-	for (int i = 0; i < count; i++) {
-		out.emplace_back(lines[i].line.x * 10 + origin.x, lines[i].line.y * 10 + origin.y);
-	}
-	return out;
-} 
+
+ImColor toImColor(const dd::DrawVertex& v) {
+	return ImColor(v.line.r, v.line.g, v.line.b);
+}
+
+ImVec2 toImVec2(const dd::DrawVertex& v) {
+	return ImVec2(v.line.x, v.line.y);
+}
 void DirectXRenderInterface::drawLineList(const dd::DrawVertex * lines, int count, bool depthEnabled)
 {
 	assert(lines != nullptr);
 	assert(count > 0 && count <= DEBUG_DRAW_VERTEX_BUFFER_SIZE);
-	m_list->AddPolyline(fromDdVertex(lines, count, m_origin).data(), count, ImColor(255, 0, 0), false, 1.0f, true);
 
-	//for (int i = 0; i < count; i++) {
-//	}
+
+	for (int i = 0; i < count - 1; i++) {
+		auto p1 = toImVec2(lines[i]);
+		auto p2 = toImVec2(lines[i + 1]);
+
+		p1.x *= 10;
+		p1.y *= 10;
+		p2.x *= 10;
+		p2.y *= 10;
+		p1.x += m_origin.x;
+		p1.y += m_origin.y;
+		p2.x += m_origin.x;
+		p2.y += m_origin.y;
+		m_list->AddLine(p1, p2, toImColor(lines[i]));
+
+	}
 
 
 

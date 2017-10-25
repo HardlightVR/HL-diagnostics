@@ -237,20 +237,23 @@ void testPads(HLVR_System* system) {
 	effect.Play();
 }
 
-
-void DrawQuaternionWidget(const HLVR_Quaternion& q) {
+void DrawBoxWidget(const HLVR_Quaternion& q, const ddVec3& boxCenter = { 0.0f, 0.0f, 0.0f }) {
+	const ddVec3 boxColor = { 0.0f, 0.8f, 0.8f };
+	dd::box(boxCenter, boxColor, 10.5f, 10.5f, 10.5f);
+	dd::cross(boxCenter, 10.0f);
+}
+void DrawQuaternionWidget(const HLVR_Quaternion& q, const ddVec3_In& translation = { 0.0f, 0.0f, 0.0f }) {
 	const ddVec3 boxColor = { 0.0f, 0.8f, 0.8f };
 	const ddVec3 boxCenter = { 0.0f, 0.0f, 3.0f };
-
 
 	const ddMat4x4 quaternion = {
 		(1.0 - 2.0 * q.y * q.y) - (2.0 * q.z * q.z),      (2.0 * q.x * q.y) - (2 * q.z * q.w),          (2.0 * q.x * q.z) + (2.0 * q.y * q.w), 0,
 		(2.0 * q.x * q.y) + (2.0 * q.z * q.w)      ,      (1.0 - 2.0 * q.x * q.x) - (2.0 * q.z * q.z),  (2.0 * q.y * q.z) - (2.0 * q.x * q.w), 0, 
 		(2.0 * q.x * q.z) - (2.0 * q.y * q.w)     ,	  (2 * q.y * q.z) + (2 * q.x * q.w),            (1.0 - 2.0 * q.x * q.x) - (2.0 * q.y * q.y), 0,
-		0,0,0,1
+		translation[0], translation[1], translation[2],1
 	};
 	
-
+	
 	dd::axisTriad(quaternion, 3.0f, 6.0f);
 
 
@@ -347,8 +350,12 @@ int main(int, char**)
 				chestOrigin.y += 20.0f;
 				myDebugRenderer.SetOrigin(chestOrigin);
 
-				ImGui::Text("Chest IMU");
+				ImGui::Text("Chest"); ImGui::SameLine();
 				DrawQuaternionWidget(t.chest);
+
+				ImGui::Text("Left Upper Arm");
+				DrawQuaternionWidget(t.left_upper_arm, { 20.0f, 0.0f, 0.0f });
+
 			}
 		ImGui::End();
 
