@@ -182,7 +182,7 @@ void ShowDriverInformation() {
 
 		auto pluginVersion = HLVR_Version_Get();
 		std::stringstream s2;
-		s2<< "Hardlight.dll version " << (pluginVersion >> 16) << "." << ((pluginVersion << 16) >> 16);
+		s2 << "Hardlight.dll version " << HLVR_VERSION_STRING;
 		ImGui::Text(s2.str().c_str());
 
 
@@ -221,7 +221,7 @@ void testPads(HLVR_System* system) {
 
 	float timeOffset = 0.0f;
 	while (nodeIter.Next()) {
-		auto event = DiscreteHaptic_withnodes(1.0, HLVR_Waveform_Hum, { nodeIter.Value().Id });
+		auto event = DiscreteHaptic_withnodes(0.0, HLVR_Waveform_Click, { nodeIter.Value().Id });
 
 		HLVR_Event_ValidationResult result;
 		HLVR_Event_Validate(event.get(), &result);
@@ -339,7 +339,7 @@ int main(int, char**)
 		}
 		platformWindow.Render();
 
-		ImGui::Begin("3DStuff");
+		ImGui::Begin("Tracking");
 			HLVR_TrackingUpdate t;
 			if (HLVR_OK(HLVR_System_PollTracking(plugin, &t))) {
 				myDebugRenderer.SetDrawlist(ImGui::GetWindowDrawList());
@@ -350,30 +350,40 @@ int main(int, char**)
 				chestOrigin.y += 20.0f;
 				myDebugRenderer.SetOrigin(chestOrigin);
 
-				ImGui::Text("Chest"); ImGui::SameLine();
-				DrawQuaternionWidget(t.chest);
+				ImGui::BeginChild("chest", ImVec2(120, 120), true);
+					ImGui::Text("Chest");
+					DrawQuaternionWidget(t.chest, { 3.0f, 3.9f, 0.0f });
+				ImGui::EndChild();
+				ImGui::SameLine();
+				
+				ImGui::BeginChild("lua", ImVec2(120, 120), true);
+					ImGui::Text("Left UpperArm"); 
+					DrawQuaternionWidget(t.left_upper_arm, { 15.0f, 3.9f, 0.0f });
+				ImGui::EndChild();
+				ImGui::SameLine();
 
-				ImGui::Text("Left Upper Arm");
-				DrawQuaternionWidget(t.left_upper_arm, { 20.0f, 0.0f, 0.0f });
+				ImGui::BeginChild("rua", ImVec2(120, 120), true);
+					ImGui::Text("Right UpperArm");
+					DrawQuaternionWidget(t.right_upper_arm, { 28.0f, 3.9f, 0.0f });
+				ImGui::EndChild();
 
 			}
 		ImGui::End();
 
-		if (ImGui::Button("TEST")) {
+		if (ImGui::Button("Test pads sequentially")) {
 			testPads(plugin);
 		}
 
 		static float click_interval = 0;
 		static bool clicking_enabled = false;
 		static std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
-		if (ImGui::VSliderFloat("Click Hz", ImVec2(25, 100), &click_interval, 0, 10.0, "%.1f")) {
+		if (ImGui::VSliderFloat("Click All Hz", ImVec2(25, 100), &click_interval, 0, 20.0, "%.1f")) {
 			clicking_enabled = click_interval > 0;
 		}
 
 		if (clicking_enabled) {
-
-			int cycle_time = 1.0 / click_interval;
-			auto delay = std::chrono::milliseconds(1000 * cycle_time);
+			float cycle_time = 1.0 / click_interval;
+			auto delay = std::chrono::milliseconds(static_cast<int>(1000 * cycle_time));
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - lastTime) > delay) {
 				auto haptic = DiscreteHaptic_withregions(0.0, HLVR_Waveform_Click, { hlvr_region_body });
 				HLVR_System_StreamEvent(plugin, haptic.get());
