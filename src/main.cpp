@@ -339,6 +339,7 @@ int main(int, char**)
 		}
 		platformWindow.Render();
 
+	
 		ImGui::Begin("Tracking");
 			HLVR_TrackingUpdate t;
 			if (HLVR_OK(HLVR_System_PollTracking(plugin, &t))) {

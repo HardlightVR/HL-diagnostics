@@ -85,6 +85,10 @@ PlatformWindow::PlatformWindow(hvr_platform * platform, HLVR_System* plugin)
 		return ImGui::Button(label);
 	};
 
+	menu.slider_int = [](const char* key, int* val, int min, int max) {
+		return ImGui::SliderInt(key, val, min, max);
+	};
+
 	
 	
 	hvr_platform_setupdiagnostics(m_platform, &menu);
