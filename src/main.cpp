@@ -213,6 +213,24 @@ auto DiscreteHaptic_withnodes(float duration, HLVR_Waveform waveform, const std:
 	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
 	return ptr;
 }
+
+auto EnableAudio(const std::vector<uint32_t>& regions) {
+	HLVR_Event* event;
+	HLVR_Event_Create(&event, HLVR_EventType_BeginAnalogAudio);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Regions_UInt32s, regions.data(), regions.size());
+
+	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
+	return ptr;
+}
+
+auto DisableAudio(const std::vector<uint32_t>& regions) {
+	HLVR_Event* event;
+	HLVR_Event_Create(&event, HLVR_EventType_EndAnalogAudio);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Regions_UInt32s, regions.data(), regions.size());
+
+	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
+	return ptr;
+}
 void testPads(HLVR_System* system) {
 
 	Timeline timeline;
@@ -392,6 +410,14 @@ int main(int, char**)
 			}
 		}
 		
+		if (ImGui::Button("Enable audio")) {
+			HLVR_System_StreamEvent(plugin, EnableAudio({ hlvr_region_chest_left, hlvr_region_chest_right }).get());
+		}
+
+		if (ImGui::Button("Disable audio")) {
+			HLVR_System_StreamEvent(plugin, DisableAudio({ hlvr_region_chest_left, hlvr_region_chest_right }).get());
+		}
+
 		dd::flush(0);
 		
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);
