@@ -191,24 +191,35 @@ void ShowDriverInformation() {
 	ImGui::End();
 }
 
-auto DiscreteHaptic_withregions(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& regions, float strength = 1.0f) {
+auto DiscreteHaptic_withregions(uint32_t repetitions, HLVR_Waveform waveform, const std::vector<uint32_t>& regions, float strength = 1.0f) {
 	HLVR_Event* event;
 	HLVR_Event_Create(&event, HLVR_EventType_DiscreteHaptic);
 	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Regions_UInt32s, regions.data(), regions.size());
 	HLVR_Event_SetInt(event, HLVR_EventKey_DiscreteHaptic_Waveform_Int, waveform);
-	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Duration_Float, duration);
+	HLVR_Event_SetUInt32(event, HLVR_EventKey_DiscreteHaptic_Repetitions_UInt32, repetitions);
 	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Strength_Float, strength);
 
 	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
 	return ptr;
 }
-auto DiscreteHaptic_withnodes(float duration, HLVR_Waveform waveform, const std::vector<uint32_t>& nodes, float strength = 1.0f) {
+auto DiscreteHaptic_withnodes(uint32_t repetitions, HLVR_Waveform waveform, const std::vector<uint32_t>& nodes, float strength = 1.0f) {
 	HLVR_Event* event;
 	HLVR_Event_Create(&event, HLVR_EventType_DiscreteHaptic);
 	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Nodes_UInt32s, nodes.data(), nodes.size());
 	HLVR_Event_SetInt(event, HLVR_EventKey_DiscreteHaptic_Waveform_Int, waveform);
-	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Duration_Float, duration);
+	HLVR_Event_SetUInt32(event, HLVR_EventKey_DiscreteHaptic_Repetitions_UInt32, repetitions);
 	HLVR_Event_SetFloat(event, HLVR_EventKey_DiscreteHaptic_Strength_Float, strength);
+
+	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
+	return ptr;
+}
+
+auto BufferedHaptic_withregions(const std::vector<float>& samples, float desiredFrequency, const std::vector<uint32_t>& regions) {
+	HLVR_Event* event;
+	HLVR_Event_Create(&event, HLVR_EventType_BufferedHaptic);
+	HLVR_Event_SetUInt32s(event, HLVR_EventKey_Target_Regions_UInt32s, regions.data(), regions.size());
+	HLVR_Event_SetFloats(event, HLVR_EventKey_BufferedHaptic_Samples_Floats, samples.data(), samples.size());
+	HLVR_Event_SetFloat(event, HLVR_EventKey_BufferedHaptic_Frequency_Float, desiredFrequency);
 
 	std::unique_ptr<HLVR_Event, std::function<void(HLVR_Event*)>> ptr(event, [](HLVR_Event* e) { HLVR_Event_Destroy(&e); });
 	return ptr;
@@ -239,7 +250,7 @@ void testPads(HLVR_System* system) {
 
 	float timeOffset = 0.0f;
 	while (nodeIter.Next()) {
-		auto event = DiscreteHaptic_withnodes(0.0, HLVR_Waveform_Click, { nodeIter.Value().Id });
+		auto event = DiscreteHaptic_withnodes(0, HLVR_Waveform_Hum, { nodeIter.Value().Id });
 
 		HLVR_Event_ValidationResult result;
 		HLVR_Event_Validate(event.get(), &result);
@@ -247,7 +258,7 @@ void testPads(HLVR_System* system) {
 		assert(result.Count == 0);
 
 		timeline.AddEvent(timeOffset, event.get());
-		timeOffset += 1.0f;
+		timeOffset += 2.0f;
 	}
 
 	Effect effect;
@@ -389,6 +400,16 @@ int main(int, char**)
 			}
 		ImGui::End();
 
+		static int humDur = 0;
+		ImGui::SliderInt("Hum duration", &humDur, 0, 50);
+		if (ImGui::Button("Hum")) {
+			auto event = DiscreteHaptic_withregions(humDur, HLVR_Waveform_Hum, {hlvr_region_chest_left });
+			HLVR_System_StreamEvent(plugin, event.get());
+		}
+		if (ImGui::Button("Click")) {
+			auto event = DiscreteHaptic_withregions(humDur, HLVR_Waveform_Click, { hlvr_region_chest_left });
+			HLVR_System_StreamEvent(plugin, event.get());
+		}
 		if (ImGui::Button("Test pads sequentially")) {
 			testPads(plugin);
 		}
@@ -401,10 +422,10 @@ int main(int, char**)
 		}
 
 		if (clicking_enabled) {
-			float cycle_time = 1.0 / click_interval;
+			float cycle_time = 1.f / click_interval;
 			auto delay = std::chrono::milliseconds(static_cast<int>(1000 * cycle_time));
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - lastTime) > delay) {
-				auto haptic = DiscreteHaptic_withregions(0.0, HLVR_Waveform_Click, { hlvr_region_body });
+				auto haptic = DiscreteHaptic_withregions(1, HLVR_Waveform_Click, { hlvr_region_body });
 				HLVR_System_StreamEvent(plugin, haptic.get());
 				lastTime = std::chrono::high_resolution_clock::now();
 			}
@@ -418,6 +439,16 @@ int main(int, char**)
 			HLVR_System_StreamEvent(plugin, DisableAudio({ hlvr_region_chest_left, hlvr_region_chest_right }).get());
 		}
 
+		if (ImGui::Button("Buffered")) {
+			HLVR_System_StreamEvent(plugin, BufferedHaptic_withregions({ 0.0f, 0.1f, 0.2f, 0.3f, 0.5f, 0.6f, 0.8f, 1.0f, 1.0f, 0.5f, 0.2f, 0.0f }, 50, { hlvr_region_body }).get());
+		}
+
+		if (ImGui::Button("click")) {
+			HLVR_System_StreamEvent(plugin, DiscreteHaptic_withregions(0, HLVR_Waveform_Hum, { hlvr_region_chest_right }).get());
+		}
+
+
+		
 		dd::flush(0);
 		
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_color);

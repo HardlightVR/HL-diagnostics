@@ -129,7 +129,7 @@ void PlatformWindow::renderAvailableHardwarePlugins()
 	hvr_plugin_list plugins;
 	hvr_platform_enumerateplugins(m_platform, &plugins);
 
-	for (int i = 0; i < plugins.count; i++) {
+	for (uint32_t i = 0; i < plugins.count; i++) {
 		hvr_plugin_info info = { 0 };
 		hvr_platform_getplugininfo(m_platform, plugins.ids[i], &info);
 		if (ImGui::CollapsingHeader(info.name))
@@ -213,7 +213,7 @@ void PlatformWindow::renderEmulation()
 	ImGui::Text("Displays activity on regions registered by the hardware devices."); ImGui::SameLine();
 	ShowHelpMarker("The view is populated lazily when you begin to interact or send commands to the platform. Don't worry if it's blank");
 
-	for (auto i = 0; i < numNodes; i++) {
+	for (uint32_t i = 0; i < numNodes; i++) {
 		static float f;
 		
 
