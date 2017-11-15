@@ -401,11 +401,17 @@ int main(int, char**)
 		ImGui::End();
 
 		static int humDur = 0;
-		ImGui::SliderInt("Hum duration", &humDur, 0, 50);
-		if (ImGui::Button("Hum")) {
-			auto event = DiscreteHaptic_withregions(humDur, HLVR_Waveform_Hum, {hlvr_region_chest_left });
-			HLVR_System_StreamEvent(plugin, event.get());
+		static float humStrength = 1;
+		ImGui::SliderInt("Waveform repetitions", &humDur, 0, 50);
+		ImGui::SliderFloat("Waveform strength", &humStrength, 0, 1.0);
+		std::vector<HLVR_Waveform> waveforms = { HLVR_Waveform_Bump, HLVR_Waveform_Buzz, HLVR_Waveform_Click, HLVR_Waveform_Fuzz, HLVR_Waveform_Hum, HLVR_Waveform_Pulse, HLVR_Waveform_Tick, HLVR_Waveform_Double_Click, HLVR_Waveform_Triple_Click };
+		for (auto waveform : waveforms) {
+			if (ImGui::Button(std::to_string(waveform).c_str())) {
+				auto event = DiscreteHaptic_withregions(humDur, waveform, { hlvr_region_chest_left }, humStrength);
+				HLVR_System_StreamEvent(plugin, event.get());
+			}
 		}
+		
 		if (ImGui::Button("Click")) {
 			auto event = DiscreteHaptic_withregions(humDur, HLVR_Waveform_Click, { hlvr_region_chest_left });
 			HLVR_System_StreamEvent(plugin, event.get());

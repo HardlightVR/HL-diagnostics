@@ -95,4 +95,7 @@
     </ClCompile>
     <ClCompile Include="..\src\DirectXRenderInterface.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\version.rc2" />
+  </ItemGroup>
 </Project>

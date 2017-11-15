@@ -138,6 +138,17 @@ IF EXIST ..\..\NSLoader\build\bin\Release\Win32\Hardlight.dll\ (xcopy /Q /E /Y /
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\src\version.rc2">
+      <FileType>RC</FileType>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="NGitVersion\NGitVersion.csproj">
+      <Project>{badb59fb-1a14-42af-b314-152c4787f437}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
